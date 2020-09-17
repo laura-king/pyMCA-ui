@@ -1,10 +1,3 @@
-'''
-File responsonsible for reading and processing data for SSRL_MCA pydm screen.
-
-Original: Unnamed Intern
-Refactored: Laura King
-09/2020
-'''
 import math, time
 import numpy                   as np
 import scipy.signal            as signal
@@ -22,172 +15,159 @@ element  = {}
 emission = {}
 energy   = []
 
-#TODO: remove globals
-
-#TODO: command line argument parsing for reading from file vs data stream
-
-#TODO: remove old commented code once I know what it's doing
-
-#TODO: remove/clean prints to declog terminal
-
-#TODO: function headers
-
-#TODO: for i in ranges necessary?
-
 def build_dic():
     global energy
-    #TODO: accept filename as cli arg
-    filename = "XRay_Emission_Lines.txt"
 
-    with open(filename) as file:
-        for line in file:
-            if ( len(line) <= 1 ): continue
+    line = popen( "cat XRay_Emission_Lines.txt" ).readlines()
 
-            xxx = line.split()
+    for il in range( len(line) ):
+        if ( len(line[il]) <= 1 ): continue
 
-            try:
-                idx = int(xxx[0])
-            except:
-                continue
+        xxx = line[il].split()
 
-            symbol = xxx[1] + xxx[0]
+        try:
+            idx = int(xxx[0])
+        except:
+            continue
 
-            try:
-                ka1 = float(xxx[2])
-            except:
-                ka1 = 0.
+        symbol = xxx[1] + xxx[0]
 
-            try:
-                ka2 = float(xxx[3])
-            except:
-                ka2 = 0.
+        try:
+            ka1 = float(xxx[2])
+        except:
+            ka1 = 0.
 
-            try:
-                kb1 = float(xxx[4])
-            except:
-                kb1 = 0.
+        try:
+            ka2 = float(xxx[3])
+        except:
+            ka2 = 0.
 
-            try:
-                la1 = float(xxx[5])
-            except:
-                la1 = 0.
+        try:
+            kb1 = float(xxx[4])
+        except:
+            kb1 = 0.
 
-            try:
-                la2 = float(xxx[6])
-            except:
-                la2 = 0.
+        try:
+            la1 = float(xxx[5])
+        except:
+            la1 = 0.
 
-            try:
-                lb1 = float(xxx[7])
-            except:
-                lb1 = 0.
+        try:
+            la2 = float(xxx[6])
+        except:
+            la2 = 0.
 
-            try:
-                lb2 = float(xxx[8])
-            except:
-                lb2 = 0.
+        try:
+            lb1 = float(xxx[7])
+        except:
+            lb1 = 0.
 
-            try:
-                lg1 = float(xxx[9])
-            except:
-                lg1 = 0.
+        try:
+            lb2 = float(xxx[8])
+        except:
+            lb2 = 0.
 
-            try:
-                ma1 = float(xxx[10])
-            except:
-                ma1 = 0.
+        try:
+            lg1 = float(xxx[9])
+        except:
+            lg1 = 0.
 
-            element_d = {}
-            #TODO: Spacing issues
-            if ( ka1 != 0 ) and ( ka2 != 0 ):
-                if ( (ka1 - ka2) > -30 ) and ( (ka1 - ka2) < 30 ):
-                    element_d[        "Ka" ] = (ka1 + ka2) / 2.
+        try:
+            ma1 = float(xxx[10])
+        except:
+            ma1 = 0.
 
-                    emission [symbol+"-Ka" ] = (ka1 + ka2) / 2.
-                else:
-                    element_d[        "Ka1"] =  ka1
-                    element_d[        "Ka2"] =  ka2
+        element_d = {}
 
-                    emission [symbol+"-Ka1"] =  ka1
-                    emission [symbol+"-Ka2"] =  ka2
+        if ( ka1 != 0 ) and ( ka2 != 0 ):
+            if ( (ka1 - ka2) > -30 ) and ( (ka1 - ka2) < 30 ):
+                element_d[        "Ka" ] = (ka1 + ka2) / 2.
+
+                emission [symbol+"-Ka" ] = (ka1 + ka2) / 2.
             else:
-                if ( ka1 != 0 ):
-                    element_d[        "Ka1"] =  ka1
+                element_d[        "Ka1"] =  ka1
+                element_d[        "Ka2"] =  ka2
 
-                    emission [symbol+"-Ka1"] =  ka1
+                emission [symbol+"-Ka1"] =  ka1
+                emission [symbol+"-Ka2"] =  ka2
+        else:
+            if ( ka1 != 0 ):
+                element_d[        "Ka1"] =  ka1
 
-                if ( ka2 != 0 ):
-                    element_d[        "Ka2"] =  ka2
+                emission [symbol+"-Ka1"] =  ka1
 
-                    emission [symbol+"-Ka2"] =  ka2
+            if ( ka2 != 0 ):
+                element_d[        "Ka2"] =  ka2
 
-            if ( kb1 != 0 ):
-                element_d[        "Kb1"] =  kb1
+                emission [symbol+"-Ka2"] =  ka2
 
-                emission [symbol+"-Kb1"] =  kb1
+        if ( kb1 != 0 ):
+            element_d[        "Kb1"] =  kb1
 
-            if ( la1 != 0 ) and ( la2 != 0 ):
-                if ( (la1 - la2) > -30 ) and ( (la1 - la2) < 30 ):
-                    element_d[        "La" ] = (la1 + la2) / 2.
+            emission [symbol+"-Kb1"] =  kb1
 
-                    emission [symbol+"-La" ] = (la1 + la2) / 2.
-                else:
-                    element_d[        "La1"] =  la1
-                    element_d[        "La2"] =  la2
+        if ( la1 != 0 ) and ( la2 != 0 ):
+            if ( (la1 - la2) > -30 ) and ( (la1 - la2) < 30 ):
+                element_d[        "La" ] = (la1 + la2) / 2.
 
-                    emission [symbol+"-La1"] =  la1
-                    emission [symbol+"-La2"] =  la2
+                emission [symbol+"-La" ] = (la1 + la2) / 2.
             else:
-                if ( la1 != 0 ):
-                    element_d[        "La1"] =  la1
+                element_d[        "La1"] =  la1
+                element_d[        "La2"] =  la2
 
-                    emission [symbol+"-La1"] =  la1
+                emission [symbol+"-La1"] =  la1
+                emission [symbol+"-La2"] =  la2
+        else:
+            if ( la1 != 0 ):
+                element_d[        "La1"] =  la1
 
-                if ( la2 != 0 ):
-                    element_d[        "La2"] =  la2
+                emission [symbol+"-La1"] =  la1
 
-                    emission [symbol+"-La2"] =  la2
+            if ( la2 != 0 ):
+                element_d[        "La2"] =  la2
 
-            if ( lb1 != 0 ) and ( lb2 != 0 ):
-                if ( (lb1 - lb2) > -30 ) and ( (lb1 - lb2) < 30 ):
-                    element_d[        "Lb" ] = (lb1 + lb2) / 2.
+                emission [symbol+"-La2"] =  la2
 
-                    emission [symbol+"-Lb" ] = (lb1 + lb2) / 2.
-                else:
-                    element_d[        "Lb1"] =  lb1
-                    element_d[        "Lb2"] =  lb2
+        if ( lb1 != 0 ) and ( lb2 != 0 ):
+            if ( (lb1 - lb2) > -30 ) and ( (lb1 - lb2) < 30 ):
+                element_d[        "Lb" ] = (lb1 + lb2) / 2.
 
-                    emission [symbol+"-Lb1"] =  lb1
-                    emission [symbol+"-Lb2"] =  lb2
+                emission [symbol+"-Lb" ] = (lb1 + lb2) / 2.
             else:
-                if ( lb1 != 0 ):
-                    element_d[        "Lb1"] =  lb1
+                element_d[        "Lb1"] =  lb1
+                element_d[        "Lb2"] =  lb2
 
-                    emission [symbol+"-Lb1"] =  lb1
+                emission [symbol+"-Lb1"] =  lb1
+                emission [symbol+"-Lb2"] =  lb2
+        else:
+            if ( lb1 != 0 ):
+                element_d[        "Lb1"] =  lb1
 
-                if ( lb2 != 0 ):
-                    element_d[        "Lb2"] =  lb2
+                emission [symbol+"-Lb1"] =  lb1
 
-                    emission [symbol+"-Lb2"] =  lb2
+            if ( lb2 != 0 ):
+                element_d[        "Lb2"] =  lb2
 
-            if ( lg1 != 0 ):
-                element_d[        "Lg1"] =  lg1
+                emission [symbol+"-Lb2"] =  lb2
 
-                emission [symbol+"-Lg1"] =  lg1
+        if ( lg1 != 0 ):
+            element_d[        "Lg1"] =  lg1
 
-            if ( ma1 != 0 ):
-                element_d[        "Ma1"] =  ma1
+            emission [symbol+"-Lg1"] =  lg1
 
-                emission [symbol+"-Ma1"] =  ma1
+        if ( ma1 != 0 ):
+            element_d[        "Ma1"] =  ma1
 
-            element[symbol] = element_d
+            emission [symbol+"-Ma1"] =  ma1
 
-        energy_i = []
-        for key in emission.keys():
-            xxx = key.split( "-" )
-            energy_i.append( [emission[key], xxx[0], xxx[1]] )
+        element[symbol] = element_d
 
-        energy = sorted( energy_i, key=itemgetter(0) )
+    energy_i = []
+    for key in emission.keys():
+        xxx = key.split( "-" )
+        energy_i.append( [emission[key], xxx[0], xxx[1]] )
+
+    energy = sorted( energy_i, key=itemgetter(0) )
 
 def gaussian (x, amplitude, mean, sigma):
     return amplitude * np.exp(-((x-mean)/sigma)**2/2.)
@@ -203,10 +183,6 @@ class MCADisplay( Display ):
     def __init__(self, parent=None, args=None, macros=None):
         super(MCADisplay, self).__init__(parent=parent, args=args, macros=macros)
 
-        #TODO: remove this line i'm adding
-        test=False
-
-
         build_dic()
 
 #       self.waveform.enableCrosshair(True, 0, 0)
@@ -217,7 +193,6 @@ class MCADisplay( Display ):
         self.waveform.setXLabels(["Energy (eV)"])
         self.waveform.setYLabels(["Count"      ])
 
-        #TODO: better way to add channels?
         self.waveform.addChannel(None, None, name="Full",   color="white")
 
         self.waveform.addChannel(None, None, name="ROI1",   color="red"  ,     \
@@ -278,7 +253,6 @@ class MCADisplay( Display ):
 
         self.curve = self.waveform._curves[ 0];
 
-        #TODO: less appends
         self.croi  = []
         self.croi.append( self.waveform._curves[ 1] );
         self.croi.append( self.waveform._curves[ 2] );
@@ -374,13 +348,7 @@ class MCADisplay( Display ):
         if ( macros != None ) and ( "DEVICE" in macros ):
             self.dataSource.addItem( "Live EPICS" )
 
-            #TODO: other file uses macros["DEVICE"]+":RAW:ArrayData"
-            if test:
-                epics = PyDMChannel( address="ca://"+
-                                 macros["DEVICE"]+":RAW:ArrayData",
-                                 value_slot=self.live_data )                
-            else:
-                epics = PyDMChannel( address="ca://"+
+            epics = PyDMChannel( address="ca://"+
                                  macros["DEVICE"]+":ARR1:ArrayData",
                                  value_slot=self.live_data )
             epics.connect()
@@ -445,7 +413,6 @@ class MCADisplay( Display ):
         line_p  = sorted( line_e, key=itemgetter(2) )
 
         l_text  = ""
-
         for ip in range( min(6, len(line_p)) ):
             if ( ip > 0 ): l_text = l_text + ", "
 
