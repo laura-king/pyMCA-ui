@@ -370,6 +370,7 @@ class MCADisplay( Display ):
         if ( macros != None ) and ( "DEVICE" in macros ):
             self.dataSource.addItem( "Live EPICS" )
 
+            #TODO: other file uses macros["DEVICE"]+":RAW:ArrayData"
             epics = PyDMChannel( address="ca://"+
                                  macros["DEVICE"]+":ARR1:ArrayData",
                                  value_slot=self.live_data )
