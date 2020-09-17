@@ -1,3 +1,10 @@
+'''
+File responsonsible for reading and processing data for SSRL_MCA pydm screen.
+
+Original: Unnamed Intern
+Refactored: Laura King
+09/2020
+'''
 import math, time
 import numpy                   as np
 import scipy.signal            as signal
@@ -15,11 +22,24 @@ element  = {}
 emission = {}
 energy   = []
 
+#TODO: remove globals
+
+#TODO: command line argument parsing for reading from file vs data stream
+
+#TODO: remove old commented code once I know what it's doing
+
+#TODO: remove/clean prints to declog terminal
+
+#TODO: function headers
+
+#TODO: for i in ranges necessary?
+
 def build_dic():
     global energy
 
     line = popen( "cat XRay_Emission_Lines.txt" ).readlines()
 
+    #TODO: for line in file
     for il in range( len(line) ):
         if ( len(line[il]) <= 1 ): continue
 
@@ -78,7 +98,7 @@ def build_dic():
             ma1 = 0.
 
         element_d = {}
-
+        #TODO: Spacing issues
         if ( ka1 != 0 ) and ( ka2 != 0 ):
             if ( (ka1 - ka2) > -30 ) and ( (ka1 - ka2) < 30 ):
                 element_d[        "Ka" ] = (ka1 + ka2) / 2.
@@ -193,6 +213,7 @@ class MCADisplay( Display ):
         self.waveform.setXLabels(["Energy (eV)"])
         self.waveform.setYLabels(["Count"      ])
 
+        #TODO: better way to add channels?
         self.waveform.addChannel(None, None, name="Full",   color="white")
 
         self.waveform.addChannel(None, None, name="ROI1",   color="red"  ,     \
@@ -253,6 +274,7 @@ class MCADisplay( Display ):
 
         self.curve = self.waveform._curves[ 0];
 
+        #TODO: less appends
         self.croi  = []
         self.croi.append( self.waveform._curves[ 1] );
         self.croi.append( self.waveform._curves[ 2] );
@@ -413,6 +435,7 @@ class MCADisplay( Display ):
         line_p  = sorted( line_e, key=itemgetter(2) )
 
         l_text  = ""
+
         for ip in range( min(6, len(line_p)) ):
             if ( ip > 0 ): l_text = l_text + ", "
 
