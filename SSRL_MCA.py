@@ -18,6 +18,7 @@ from scipy.optimize        import curve_fit
 from operator              import itemgetter
 from os                    import path, popen
 
+import pprint
 element  = {}
 emission = {}
 energy   = []
@@ -50,52 +51,22 @@ def build_dic():
             except:
                 continue
 
+            # First two always symbols
             symbol = xxx[1] + xxx[0]
+            
+            # Convert numbers to floats, set all dashes to and pad with 0's 
+            new_energy = []
+            for energy_val in xxx[2:]:
+                try:
+                    new_energy.append(float(energy_val))
+                except:
+                    new_energy.append(0.)
 
-            try:
-                ka1 = float(xxx[2])
-            except:
-                ka1 = 0.
+            new_energy = new_energy + [0.]*(9 - len(new_energy))
+            pprint.pprint(new_energy)
 
-            try:
-                ka2 = float(xxx[3])
-            except:
-                ka2 = 0.
-
-            try:
-                kb1 = float(xxx[4])
-            except:
-                kb1 = 0.
-
-            try:
-                la1 = float(xxx[5])
-            except:
-                la1 = 0.
-
-            try:
-                la2 = float(xxx[6])
-            except:
-                la2 = 0.
-
-            try:
-                lb1 = float(xxx[7])
-            except:
-                lb1 = 0.
-
-            try:
-                lb2 = float(xxx[8])
-            except:
-                lb2 = 0.
-
-            try:
-                lg1 = float(xxx[9])
-            except:
-                lg1 = 0.
-
-            try:
-                ma1 = float(xxx[10])
-            except:
-                ma1 = 0.
+            # Set vars to data
+            ka1, ka2, kb1, la1, la2, lb1, lb2, lg1, ma1 = new_energy
 
             element_d = {}
             #TODO: Spacing issues
