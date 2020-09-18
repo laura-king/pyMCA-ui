@@ -44,19 +44,19 @@ def build_dic():
         for line in file:
             if ( len(line) <= 1 ): continue
 
-            xxx = line.split()
+            line_data = line.split()
 
             try:
-                idx = int(xxx[0])
+                idx = int(line_data[0])
             except:
                 continue
 
             # First two always symbols
-            symbol = xxx[1] + xxx[0]
+            symbol = line_data[1] + line_data[0]
             
             # Convert numbers to floats, set all dashes to and pad with 0's 
             new_energy = []
-            for energy_val in xxx[2:]:
+            for energy_val in line_data[2:]:
                 try:
                     new_energy.append(float(energy_val))
                 except:
@@ -68,63 +68,52 @@ def build_dic():
             ka1, ka2, kb1, la1, la2, lb1, lb2, lg1, ma1 = new_energy
 
             element_d = {}
-            #TODO: Should I change spacing? Do they prefer the spaces to keep things even?
+            #TODO: Do we need all of these dictionaries? a lot of repeated data...
             # I can probably actually just loop over once and don't even need to assign the variables
             if ( ka1 != 0 ) and ( ka2 != 0 ):
                 element_d, emission = combine((symbol+"-Ka"), ka1, ka2, element_d, emission)
             else:
                 if ( ka1 != 0 ):
-                    element_d[        "Ka1"] =  ka1
-
-                    emission [symbol+"-Ka1"] =  ka1
-
+                    element_d["Ka1"] = ka1
+                    emission[symbol + "-Ka1"] = ka1
                 if ( ka2 != 0 ):
-                    element_d[        "Ka2"] =  ka2
-
-                    emission [symbol+"-Ka2"] =  ka2
+                    element_d["Ka2"] = ka2
+                    emission[symbol + "-Ka2"] = ka2
 
             if ( kb1 != 0 ):
-                element_d[        "Kb1"] =  kb1
-
-                emission [symbol+"-Kb1"] =  kb1
+                element_d["Kb1"] = kb1
+                emission[symbol + "-Kb1"] = kb1
 
             if ( la1 != 0 ) and ( la2 != 0 ):
                 element_d, emission = combine((symbol+"-La"), la1, la2, element_d, emission)
             else:
                 if ( la1 != 0 ):
-                    element_d[        "La1"] =  la1
-
-                    emission [symbol+"-La1"] =  la1
-
+                    element_d["La1"] = la1
+                    emission[symbol+"-La1"] =  la1
                 if ( la2 != 0 ):
-                    element_d[        "La2"] =  la2
-
-                    emission [symbol+"-La2"] =  la2
+                    element_d["La2"] = la2
+                    emission[symbol+"-La2"] = la2
 
             if ( lb1 != 0 ) and ( lb2 != 0 ):
                 element_d, emission = combine((symbol+"-Lb"), lb1, lb2, element_d, emission)
             else:
                 if ( lb1 != 0 ):
-                    element_d[        "Lb1"] =  lb1
-
-                    emission [symbol+"-Lb1"] =  lb1
-
+                    element_d["Lb1"] = lb1
+                    emission [symbol+"-Lb1"] = lb1
                 if ( lb2 != 0 ):
-                    element_d[        "Lb2"] =  lb2
-
-                    emission [symbol+"-Lb2"] =  lb2
+                    element_d["Lb2"] = lb2
+                    emission [symbol+"-Lb2"] = lb2
 
             if ( lg1 != 0 ):
-                element_d[        "Lg1"] =  lg1
-
-                emission [symbol+"-Lg1"] =  lg1
+                element_d["Lg1"] = lg1
+                emission [symbol+"-Lg1"] = lg1
 
             if ( ma1 != 0 ):
-                element_d[        "Ma1"] =  ma1
-
-                emission [symbol+"-Ma1"] =  ma1
+                element_d["Ma1"] = ma1
+                emission [symbol+"-Ma1"] = ma1
 
             element[symbol] = element_d
+
         pprint.pprint(emission)
         print("Element D")
         pprint.pprint(element_d)
@@ -134,8 +123,8 @@ def build_dic():
         #TODO: are these dashes from the data or from the manual dic keys?
         energy_i = []
         for key in emission.keys():
-            xxx = key.split( "-" )
-            energy_i.append( [emission[key], xxx[0], xxx[1]] )
+            keys = key.split( "-" )
+            energy_i.append( [emission[key], keys[0], keys[1]] )
 
         energy = sorted( energy_i, key=itemgetter(0) )
 
@@ -143,12 +132,10 @@ def combine(symbol, first, second, element_d, emission):
     name = symbol.split('-')[-1]
     if ( (first - second) > -30 ) and ( (first - second) < 30 ):
         element_d[name] = (first + second)/2.
-
         emission [symbol] = (first + second) / 2.
     else:
         element_d[name+"1"] =  first
         element_d[name+"2"] =  second
-
         emission [symbol+"1"] =  first
         emission [symbol+"2"] =  second
 
@@ -185,150 +172,81 @@ class MCADisplay( Display ):
         #TODO: better way to add channels?
         self.waveform.addChannel(None, None, name="Full",   color="white")
 
-        self.waveform.addChannel(None, None, name="ROI1",   color="red"  ,     \
-                                             lineWidth=2)
-        self.waveform.addChannel(None, None, name="ROI2",   color="green",     \
-                                             lineWidth=2)
-        self.waveform.addChannel(None, None, name="ROI3",   color="blue" ,     \
-                                             lineWidth=2)
-        self.waveform.addChannel(None, None, name="ROI4",   color="red"  ,     \
-                                             lineWidth=2)
-        self.waveform.addChannel(None, None, name="ROI5",   color="green",     \
-                                             lineWidth=2)
-        self.waveform.addChannel(None, None, name="ROI6",   color="blue" ,     \
-                                             lineWidth=2)
-        self.waveform.addChannel(None, None, name="ROI7",   color="red"  ,     \
-                                             lineWidth=2)
-        self.waveform.addChannel(None, None, name="ROI8",   color="green",     \
-                                             lineWidth=2)
-        self.waveform.addChannel(None, None, name="ROI9",   color="blue" ,     \
-                                             lineWidth=2)
+        color_list = ["red", "green", "blue"]
+        for wave in range(9):
+            name = f"ROI{wave+1}"
+            color = color_list[wave%len(color_list)]
+            self.waveform.addChannel(None, None, name=name, color=color, lineWidth=2)
 
-        self.waveform.addChannel(None, None, name="Line01", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line02", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line03", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line04", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line05", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line06", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line07", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line08", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line09", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line11", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line12", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line13", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line14", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line15", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line16", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line17", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line18", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
-        self.waveform.addChannel(None, None, name="Line19", color="white",     \
-                                             lineWidth=2, lineStyle=Qt.DashLine)
+        #TODO: Should there be a Line 10...? For now, skip it like they did
+        for wave in range(19):
+            if wave == 9:
+                continue
+            name = f"Line{wave+1:02d}"
+            print("name", name)
+            self.waveform.addChannel(None, None, name=name, color="white", lineWidth=2, lineStyle=Qt.DashLine)
 
-        self.curve = self.waveform._curves[ 0];
+
+        self.curve = self.waveform._curves[0]
+        self.croi = self.waveform._curves[1:10]
+        self.line = self.waveform._curves[10:28]
 
         #TODO: less appends
-        self.croi  = []
-        self.croi.append( self.waveform._curves[ 1] );
-        self.croi.append( self.waveform._curves[ 2] );
-        self.croi.append( self.waveform._curves[ 3] );
-        self.croi.append( self.waveform._curves[ 4] );
-        self.croi.append( self.waveform._curves[ 5] );
-        self.croi.append( self.waveform._curves[ 6] );
-        self.croi.append( self.waveform._curves[ 7] );
-        self.croi.append( self.waveform._curves[ 8] );
-        self.croi.append( self.waveform._curves[ 9] );
-
-        self.line  = []
-        self.line.append( self.waveform._curves[10] );
-        self.line.append( self.waveform._curves[11] );
-        self.line.append( self.waveform._curves[12] );
-        self.line.append( self.waveform._curves[13] );
-        self.line.append( self.waveform._curves[14] );
-        self.line.append( self.waveform._curves[15] );
-        self.line.append( self.waveform._curves[16] );
-        self.line.append( self.waveform._curves[17] );
-        self.line.append( self.waveform._curves[18] );
-        self.line.append( self.waveform._curves[19] );
-        self.line.append( self.waveform._curves[20] );
-        self.line.append( self.waveform._curves[21] );
-        self.line.append( self.waveform._curves[22] );
-        self.line.append( self.waveform._curves[23] );
-        self.line.append( self.waveform._curves[24] );
-        self.line.append( self.waveform._curves[25] );
-        self.line.append( self.waveform._curves[26] );
-        self.line.append( self.waveform._curves[27] );
 
         self.ROI    = []
-        self.ROI   .append( self.ROI1   );
-        self.ROI   .append( self.ROI2   );
-        self.ROI   .append( self.ROI3   );
-        self.ROI   .append( self.ROI4   );
-        self.ROI   .append( self.ROI5   );
-        self.ROI   .append( self.ROI6   );
-        self.ROI   .append( self.ROI7   );
-        self.ROI   .append( self.ROI8   );
-        self.ROI   .append( self.ROI9   );
+        self.ROI   .append( self.ROI1   )
+        self.ROI   .append( self.ROI2   )
+        self.ROI   .append( self.ROI3   )
+        self.ROI   .append( self.ROI4   )
+        self.ROI   .append( self.ROI5   )
+        self.ROI   .append( self.ROI6   )
+        self.ROI   .append( self.ROI7   )
+        self.ROI   .append( self.ROI8   )
+        self.ROI   .append( self.ROI9   )
 
         self.start  = []
-        self.start .append( self.start1 );
-        self.start .append( self.start2 );
-        self.start .append( self.start3 );
-        self.start .append( self.start4 );
-        self.start .append( self.start5 );
-        self.start .append( self.start6 );
-        self.start .append( self.start7 );
-        self.start .append( self.start8 );
-        self.start .append( self.start9 );
+        self.start .append( self.start1 )
+        self.start .append( self.start2 )
+        self.start .append( self.start3 )
+        self.start .append( self.start4 )
+        self.start .append( self.start5 )
+        self.start .append( self.start6 )
+        self.start .append( self.start7 )
+        self.start .append( self.start8 )
+        self.start .append( self.start9 )
 
         self.end    = []
-        self.end   .append( self.end1   );
-        self.end   .append( self.end2   );
-        self.end   .append( self.end3   );
-        self.end   .append( self.end4   );
-        self.end   .append( self.end5   );
-        self.end   .append( self.end6   );
-        self.end   .append( self.end7   );
-        self.end   .append( self.end8   );
-        self.end   .append( self.end9   );
+        self.end   .append( self.end1   )
+        self.end   .append( self.end2   )
+        self.end   .append( self.end3   )
+        self.end   .append( self.end4   )
+        self.end   .append( self.end5   )
+        self.end   .append( self.end6   )
+        self.end   .append( self.end7   )
+        self.end   .append( self.end8   )
+        self.end   .append( self.end9   )
 
         self.counts = []
-        self.counts.append( self.counts1 );
-        self.counts.append( self.counts2 );
-        self.counts.append( self.counts3 );
-        self.counts.append( self.counts4 );
-        self.counts.append( self.counts5 );
-        self.counts.append( self.counts6 );
-        self.counts.append( self.counts7 );
-        self.counts.append( self.counts8 );
-        self.counts.append( self.counts9 );
+        self.counts.append( self.counts1 )
+        self.counts.append( self.counts2 )
+        self.counts.append( self.counts3 )
+        self.counts.append( self.counts4 )
+        self.counts.append( self.counts5 )
+        self.counts.append( self.counts6 )
+        self.counts.append( self.counts7 )
+        self.counts.append( self.counts8 )
+        self.counts.append( self.counts9 )
 
         self.lines  = []
-        self.lines .append( self.lines1  );
-        self.lines .append( self.lines2  );
-        self.lines .append( self.lines3  );
-        self.lines .append( self.lines4  );
-        self.lines .append( self.lines5  );
-        self.lines .append( self.lines6  );
-        self.lines .append( self.lines7  );
-        self.lines .append( self.lines8  );
-        self.lines .append( self.lines9  );
+        self.lines .append( self.lines1  )
+        self.lines .append( self.lines2  )
+        self.lines .append( self.lines3  )
+        self.lines .append( self.lines4  )
+        self.lines .append( self.lines5  )
+        self.lines .append( self.lines6  )
+        self.lines .append( self.lines7  )
+        self.lines .append( self.lines8  )
+        self.lines .append( self.lines9  )
 
         if ( macros != None ) and ( "FIT" in macros ):
             if ( macros["FIT"].lower() == "cauchy" ): self.fitc = "Cauchy"
