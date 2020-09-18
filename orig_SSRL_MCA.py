@@ -163,8 +163,10 @@ def build_dic():
 
         element[symbol] = element_d
     pprint.pprint(emission)
+    print("Element D")
     pprint.pprint(element_d)
-
+    print("Element")
+    pprint.pprint(element)
     energy_i = []
     for key in emission.keys():
         xxx = key.split( "-" )

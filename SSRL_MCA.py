@@ -126,7 +126,10 @@ def build_dic():
 
             element[symbol] = element_d
         pprint.pprint(emission)
+        print("Element D")
         pprint.pprint(element_d)
+        print("Element")
+        pprint.pprint(element)
 
         #TODO: are these dashes from the data or from the manual dic keys?
         energy_i = []
@@ -137,8 +140,7 @@ def build_dic():
         energy = sorted( energy_i, key=itemgetter(0) )
 
 def combine(symbol, first, second, element_d, emission):
-    name = symbol.split('-')[:-1][0]
-    #print("name", name)
+    name = symbol.split('-')[-1]
     if ( (first - second) > -30 ) and ( (first - second) < 30 ):
         element_d[name] = (first + second)/2.
 
