@@ -20,7 +20,6 @@ from os                    import path, popen
 
 import pprint
 element  = {}
-emission = {}
 energy   = []
 
 #TODO: remove globals
@@ -37,6 +36,7 @@ energy   = []
 
 def build_dic():
     global energy
+    emission = {}
     #TODO: accept filename as cli arg
     filename = "XRay_Emission_Lines.txt"
 
@@ -63,24 +63,15 @@ def build_dic():
                     new_energy.append(0.)
 
             new_energy = new_energy + [0.]*(9 - len(new_energy))
-            pprint.pprint(new_energy)
 
             # Set vars to data
             ka1, ka2, kb1, la1, la2, lb1, lb2, lg1, ma1 = new_energy
 
             element_d = {}
-            #TODO: Spacing issues
+            #TODO: Should I change spacing? Do they prefer the spaces to keep things even?
+            # I can probably actually just loop over once and don't even need to assign the variables
             if ( ka1 != 0 ) and ( ka2 != 0 ):
-                if ( (ka1 - ka2) > -30 ) and ( (ka1 - ka2) < 30 ):
-                    element_d[        "Ka" ] = (ka1 + ka2) / 2.
-
-                    emission [symbol+"-Ka" ] = (ka1 + ka2) / 2.
-                else:
-                    element_d[        "Ka1"] =  ka1
-                    element_d[        "Ka2"] =  ka2
-
-                    emission [symbol+"-Ka1"] =  ka1
-                    emission [symbol+"-Ka2"] =  ka2
+                element_d, emission = combine((symbol+"-Ka"), ka1, ka2, element_d, emission)
             else:
                 if ( ka1 != 0 ):
                     element_d[        "Ka1"] =  ka1
@@ -98,16 +89,7 @@ def build_dic():
                 emission [symbol+"-Kb1"] =  kb1
 
             if ( la1 != 0 ) and ( la2 != 0 ):
-                if ( (la1 - la2) > -30 ) and ( (la1 - la2) < 30 ):
-                    element_d[        "La" ] = (la1 + la2) / 2.
-
-                    emission [symbol+"-La" ] = (la1 + la2) / 2.
-                else:
-                    element_d[        "La1"] =  la1
-                    element_d[        "La2"] =  la2
-
-                    emission [symbol+"-La1"] =  la1
-                    emission [symbol+"-La2"] =  la2
+                element_d, emission = combine((symbol+"-La"), la1, la2, element_d, emission)
             else:
                 if ( la1 != 0 ):
                     element_d[        "La1"] =  la1
@@ -120,16 +102,7 @@ def build_dic():
                     emission [symbol+"-La2"] =  la2
 
             if ( lb1 != 0 ) and ( lb2 != 0 ):
-                if ( (lb1 - lb2) > -30 ) and ( (lb1 - lb2) < 30 ):
-                    element_d[        "Lb" ] = (lb1 + lb2) / 2.
-
-                    emission [symbol+"-Lb" ] = (lb1 + lb2) / 2.
-                else:
-                    element_d[        "Lb1"] =  lb1
-                    element_d[        "Lb2"] =  lb2
-
-                    emission [symbol+"-Lb1"] =  lb1
-                    emission [symbol+"-Lb2"] =  lb2
+                element_d, emission = combine((symbol+"-Lb"), lb1, lb2, element_d, emission)
             else:
                 if ( lb1 != 0 ):
                     element_d[        "Lb1"] =  lb1
@@ -152,13 +125,32 @@ def build_dic():
                 emission [symbol+"-Ma1"] =  ma1
 
             element[symbol] = element_d
+        pprint.pprint(emission)
+        pprint.pprint(element_d)
 
+        #TODO: are these dashes from the data or from the manual dic keys?
         energy_i = []
         for key in emission.keys():
             xxx = key.split( "-" )
             energy_i.append( [emission[key], xxx[0], xxx[1]] )
 
         energy = sorted( energy_i, key=itemgetter(0) )
+
+def combine(symbol, first, second, element_d, emission):
+    name = symbol.split('-')[:-1][0]
+    #print("name", name)
+    if ( (first - second) > -30 ) and ( (first - second) < 30 ):
+        element_d[name] = (first + second)/2.
+
+        emission [symbol] = (first + second) / 2.
+    else:
+        element_d[name+"1"] =  first
+        element_d[name+"2"] =  second
+
+        emission [symbol+"1"] =  first
+        emission [symbol+"2"] =  second
+
+    return element_d, emission
 
 def gaussian (x, amplitude, mean, sigma):
     return amplitude * np.exp(-((x-mean)/sigma)**2/2.)

@@ -10,6 +10,7 @@ from pydm.widgets.channel  import PyDMChannel
 from scipy.optimize        import curve_fit
 from operator              import itemgetter
 from os                    import path, popen
+import pprint
 
 element  = {}
 emission = {}
@@ -161,6 +162,8 @@ def build_dic():
             emission [symbol+"-Ma1"] =  ma1
 
         element[symbol] = element_d
+    pprint.pprint(emission)
+    pprint.pprint(element_d)
 
     energy_i = []
     for key in emission.keys():
