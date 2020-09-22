@@ -6,46 +6,35 @@ Refactored: Laura King
 09/2020
 '''
 import math, time
-import numpy                   as np
-import scipy.signal            as signal
+import numpy                as np
+import scipy.signal         as signal
 
-from qtpy.QtCore           import Qt
-from qtpy                  import QtGui
-from qtpy.QtWidgets        import QFileDialog
-from pydm                  import Display
-from pydm.widgets.channel  import PyDMChannel
-from scipy.optimize        import curve_fit
-from operator              import itemgetter
-from os                    import path, popen
+from qtpy.QtCore            import Qt
+from qtpy                   import QtGui, QtWidgets
+from pydm                   import Display
+from pydm.widgets.channel   import PyDMChannel
+from scipy.optimize         import curve_fit
+from operator               import itemgetter
+from os                     import path, popen
 
 import pprint
-element  = {}
-energy   = []
-
-#TODO: remove globals
 
 #TODO: command line argument parsing for reading from file vs data stream
-
-#TODO: remove old commented code once I know what it's doing
 
 #TODO: remove/clean prints to declog terminal
 
 #TODO: function headers
 
-#TODO: for i in ranges necessary?
-
 def build_dic():
-    global energy
     emission = {}
+    element = {}
     #TODO: accept filename as cli arg
     filename = "XRay_Emission_Lines.txt"
 
     with open(filename) as file:
         for line in file:
             if ( len(line) <= 1 ): continue
-
             line_data = line.split()
-
             try:
                 idx = int(line_data[0])
             except:
@@ -61,7 +50,6 @@ def build_dic():
                     new_energy.append(float(energy_val))
                 except:
                     new_energy.append(0.)
-
             new_energy = new_energy + [0.]*(9 - len(new_energy))
 
             # Set vars to data
@@ -114,19 +102,13 @@ def build_dic():
 
             element[symbol] = element_d
 
-        pprint.pprint(emission)
-        print("Element D")
-        pprint.pprint(element_d)
-        print("Element")
-        pprint.pprint(element)
-
-        #TODO: are these dashes from the data or from the manual dic keys?
         energy_i = []
         for key in emission.keys():
             keys = key.split( "-" )
             energy_i.append( [emission[key], keys[0], keys[1]] )
 
         energy = sorted( energy_i, key=itemgetter(0) )
+        return energy, element
 
 def combine(symbol, first, second, element_d, emission):
     name = symbol.split('-')[-1]
@@ -138,7 +120,6 @@ def combine(symbol, first, second, element_d, emission):
         element_d[name+"2"] =  second
         emission [symbol+"1"] =  first
         emission [symbol+"2"] =  second
-
     return element_d, emission
 
 def gaussian (x, amplitude, mean, sigma):
@@ -154,99 +135,53 @@ def cauchy(x, amplitude, mean, gamma):
 class MCADisplay( Display ):
     def __init__(self, parent=None, args=None, macros=None):
         super(MCADisplay, self).__init__(parent=parent, args=args, macros=macros)
+        self.ROI = []
+        self.start = []
+        self.end = []
+        self.counts = []
+        self.lines = []
+        self.num_ROI = 9
+
 
         #TODO: remove this line i'm adding
         test=False
 
-
-        build_dic()
-
-#       self.waveform.enableCrosshair(True, 0, 0)
-#       self.waveform.crosshair_position_updated.connect    (self.cross_info)
+        self.energy, self.element = build_dic()
 
         self.waveform.plotItem.scene().sigMouseMoved.connect(self.mouseMoved)
-
         self.waveform.setXLabels(["Energy (eV)"])
         self.waveform.setYLabels(["Count"      ])
 
-        #TODO: better way to add channels?
+        # Add Channels
         self.waveform.addChannel(None, None, name="Full",   color="white")
-
         color_list = ["red", "green", "blue"]
-        for wave in range(9):
+        for wave in range(self.num_ROI):
             name = f"ROI{wave+1}"
             color = color_list[wave%len(color_list)]
             self.waveform.addChannel(None, None, name=name, color=color, lineWidth=2)
 
-        #TODO: Should there be a Line 10...? For now, skip it like they did
-        for wave in range(19):
-            if wave == 9:
-                continue
+        #TODO: Did they forget Line 10 before...? Or was it intentional? including for now
+        for wave in range(18):
             name = f"Line{wave+1:02d}"
-            print("name", name)
             self.waveform.addChannel(None, None, name=name, color="white", lineWidth=2, lineStyle=Qt.DashLine)
 
 
         self.curve = self.waveform._curves[0]
         self.croi = self.waveform._curves[1:10]
         self.line = self.waveform._curves[10:28]
+        
+        for i in range(1, self.num_ROI+1):
+            roi = f"ROI{i}"
+            start = f"start{i}"
+            end = f"end{i}"
+            counts = f"counts{i}"
+            lines = f"lines{i}"
 
-        #TODO: less appends
-
-        self.ROI    = []
-        self.ROI   .append( self.ROI1   )
-        self.ROI   .append( self.ROI2   )
-        self.ROI   .append( self.ROI3   )
-        self.ROI   .append( self.ROI4   )
-        self.ROI   .append( self.ROI5   )
-        self.ROI   .append( self.ROI6   )
-        self.ROI   .append( self.ROI7   )
-        self.ROI   .append( self.ROI8   )
-        self.ROI   .append( self.ROI9   )
-
-        self.start  = []
-        self.start .append( self.start1 )
-        self.start .append( self.start2 )
-        self.start .append( self.start3 )
-        self.start .append( self.start4 )
-        self.start .append( self.start5 )
-        self.start .append( self.start6 )
-        self.start .append( self.start7 )
-        self.start .append( self.start8 )
-        self.start .append( self.start9 )
-
-        self.end    = []
-        self.end   .append( self.end1   )
-        self.end   .append( self.end2   )
-        self.end   .append( self.end3   )
-        self.end   .append( self.end4   )
-        self.end   .append( self.end5   )
-        self.end   .append( self.end6   )
-        self.end   .append( self.end7   )
-        self.end   .append( self.end8   )
-        self.end   .append( self.end9   )
-
-        self.counts = []
-        self.counts.append( self.counts1 )
-        self.counts.append( self.counts2 )
-        self.counts.append( self.counts3 )
-        self.counts.append( self.counts4 )
-        self.counts.append( self.counts5 )
-        self.counts.append( self.counts6 )
-        self.counts.append( self.counts7 )
-        self.counts.append( self.counts8 )
-        self.counts.append( self.counts9 )
-
-        self.lines  = []
-        self.lines .append( self.lines1  )
-        self.lines .append( self.lines2  )
-        self.lines .append( self.lines3  )
-        self.lines .append( self.lines4  )
-        self.lines .append( self.lines5  )
-        self.lines .append( self.lines6  )
-        self.lines .append( self.lines7  )
-        self.lines .append( self.lines8  )
-        self.lines .append( self.lines9  )
+            self.ROI.append(self.findChild(QtWidgets.QCheckBox, roi))
+            self.start.append(self.findChild(QtWidgets.QLineEdit, start))
+            self.end.append(self.findChild(QtWidgets.QLineEdit, end))
+            self.counts.append(self.findChild(QtWidgets.QLineEdit, counts))
+            self.lines.append(self.findChild(QtWidgets.QLineEdit, lines))
 
         if ( macros != None ) and ( "FIT" in macros ):
             if ( macros["FIT"].lower() == "cauchy" ): self.fitc = "Cauchy"
@@ -324,7 +259,7 @@ class MCADisplay( Display ):
 
         emin    = int(point_v.x()) - 200
         emax    = int(point_v.x()) + 200
-        line_e  = [ ei for ei in energy if ((ei[0] > emin) and (ei[0] < emax)) ]
+        line_e  = [ ei for ei in self.energy if ((ei[0] > emin) and (ei[0] < emax)) ]
         line_p  = sorted( line_e, key=itemgetter(2) )
 
         l_text  = ""
@@ -382,10 +317,15 @@ class MCADisplay( Display ):
         self.handle_mca()
 
     def open_file(self, *args, **kwargs):
-        fname = QFileDialog.getOpenFileName(self, "Open file", "", "Data files (*.dat);;All files (*.*)" )
+        fname = QtWidgets.QFileDialog.getOpenFileName(self, "Open file", "", "Data files (*.dat);;All files (*.*)" )
 
-        if ( fname[0] != "" ): self.record = popen("cat "+fname[0]).readlines()
-        else:                  self.record = []
+        if ( fname[0] != "" ):
+            #Not every comp has cat, readlines() can cause memory failures for large files
+            #self.record = popen("cat "+fname[0]).readlines()
+            with open(fname[0]) as f:
+                self.record = [line.rstrip() for line in f]
+        else:                  
+            self.record = []
 
         self.record_i = 0
         if ( len(self.record) > 0 ):
@@ -420,10 +360,9 @@ class MCADisplay( Display ):
 
         ret_i  = []
         work_d = []
-        for ri in range(9):
-            if ( self.ROI[ri].checkState() != 2 ): continue
+        for ri in range(self.num_ROI):
+            if not ( self.ROI[ri].isChecked() ): continue
 
-            print( "ROI: ", ri )
             try:
                 xl     = math.floor(int(self.start[ri].text()) / 10.)
                 xr     = math.floor(int(self.end  [ri].text()) / 10.)
@@ -431,7 +370,6 @@ class MCADisplay( Display ):
             except:
                 continue
 
-            print( "ROI: ", ri, xl, xr )
             if ( points < 12 ): continue
 
             xl    = xl - start
@@ -443,39 +381,21 @@ class MCADisplay( Display ):
             print( "Fit0 ", ri, xl, xr, xpeak, ypeak )
             try:
                 if ( self.fitc == "Cauchy" ):
-                    fit, tmp = curve_fit(cauchy,    list(range(xl, xr+1)),     \
-                                                    y_array[xl:xr+1],          \
-                                                    p0=[ypeak, (xr+xl)/2., (xr-xl)/4.])
+                    fit, tmp = curve_fit(cauchy, list(range(xl, xr+1)), y_array[xl:xr+1], p0=[ypeak, (xr+xl)/2., (xr-xl)/4.])
                 else:
-                    fit, tmp = curve_fit(gaussian,  list(range(xl, xr+1)),     \
-                                                    y_array[xl:xr+1],          \
-                                                    p0=[ypeak, (xr+xl)/2., (xr-xl)/4.])
-
-#                   # try to fit 2 gaussians
-#                   fit2,tmp = curve_fit(gaussian2, list(range(xl, xr+1)),     \
-#                                                   y_array[xl:xr+1],          \
-#                                                   p0=[fit[0], fit[1], fit[2], 9, xl+xr-fit[1], (xr-xl)/4.])
-#                   print( "Fit2: ", fit2 )
-#                   if ( len(fit2) > 0 ): fit = fit2
-
+                    fit, tmp = curve_fit(gaussian, list(range(xl, xr+1)), y_array[xl:xr+1], p0=[ypeak, (xr+xl)/2., (xr-xl)/4.])
                 fit = list(fit)
             except:
                 fit = []
 
             # try to fit 2 curves
-            if ( fit != [] ) and                                               \
-               ( ((fit[1]-xl)/(xr-xl) < 0.35) or ((fit[1]-xl)/(xr-xl) > 0.65) ):
+            if ( fit != [] ) and ( ((fit[1]-xl)/(xr-xl) < 0.35) or ((fit[1]-xl)/(xr-xl) > 0.65) ):
                 try:
-                    fit2, tmp = curve_fit(gaussian2, list(range(xl, xr+1)),    \
-                                                     y_array[xl:xr+1],         \
-                                                     p0=[fit[0], fit[1], fit[2], 9, xl+xr-fit[1], (xr-xl)/4.])
+                    fit2, tmp = curve_fit(gaussian2, list(range(xl, xr+1)), y_array[xl:xr+1], p0=[fit[0], fit[1], fit[2], self.num_ROI, xl+xr-fit[1], (xr-xl)/4.])
                     print( "Fit2: ", fit2 )
                     fit = fit2
                 except:
                     pass
-
-#           if ( len(fit) == 6 ) and ( fit[3] > fit[0] ):
-#               fit = fit[3:] + fit[:3]
 
             print( "Fit i: ", xl, xr, fit )
             ret_i.append( [ xl, xr, ypeak, xpeak, fit ] )
@@ -520,7 +440,7 @@ class MCADisplay( Display ):
                ( (ypeak == y[-1]) and (min(y) == y[ 0]) ): continue
 
             xr = len(y) - 3                                          # ending up
-            while( xr >= 9 ):
+            while( xr >= self.num_ROI ):
                 slope, intercept = np.polyfit( range(3), y[xr:xr+3], 1 )
                 if ( slope < 0. ): break
 
@@ -599,13 +519,9 @@ class MCADisplay( Display ):
 
             try:
                 if ( self.fitc == "Cauchy" ):
-                    fit, tmp = curve_fit(cauchy,   list(range(xl, xr+1)),      \
-                                                   y[xl:xr+1],                 \
-                                                   p0=[ypeak, (xr+xl)/2., (xr-xl)/4.])
+                    fit, tmp = curve_fit(cauchy, list(range(xl, xr+1)), y[xl:xr+1], p0=[ypeak, (xr+xl)/2., (xr-xl)/4.])
                 else:
-                    fit, tmp = curve_fit(gaussian, list(range(xl, xr+1)),      \
-                                                   y[xl:xr+1],                 \
-                                                   p0=[ypeak, (xr+xl)/2., (xr-xl)/4.])
+                    fit, tmp = curve_fit(gaussian, list(range(xl, xr+1)), y[xl:xr+1], p0=[ypeak, (xr+xl)/2., (xr-xl)/4.])
                 fit = list(fit)
             except:
                 fit = []
@@ -652,9 +568,9 @@ class MCADisplay( Display ):
         self.counts0.setText('{:.0f}'.format(sum0))
 
         ret_l = self.find_peak(y_array)
-        print( ret_l )
+        #print( ret_l )
 
-        for il in range( 9 ):
+        for il in range(self.num_ROI):
             if ( len(ret_l) > il ):
                 self.croi  [il    ].show()
             else:
@@ -665,7 +581,7 @@ class MCADisplay( Display ):
                 self.counts[il    ].setText("")
                 self.lines [il    ].setText("")
 
-                if ( self.ROI[il].checkState() != 2 ):
+                if not ( self.ROI[il].isChecked()):
                     self.start [il].setText("")
                     self.end   [il].setText("")
 
@@ -688,7 +604,7 @@ class MCADisplay( Display ):
 
             l_text = ""
             fit    = ret_l[il][4]
-            if ( self.ROI[il].checkState() != 2 ):
+            if not( self.ROI[il].isChecked()):
                 self.start[il].setText(str(10*(start_i)))
                 self.end  [il].setText(str(10*(end_i  )))
 
@@ -712,9 +628,9 @@ class MCADisplay( Display ):
                 self.line[il*2  ].show()
                 self.line[il*2+1].hide()
 
-                line_e = [ ei for ei in energy if ((ei[0] > emin) and (ei[0] < emax)) ]
+                line_e = [ ei for ei in self.energy if ((ei[0] > emin) and (ei[0] < emax)) ]
                 line_p = sorted( line_e, key=itemgetter(2) )
-                print( efit, line_p )
+                #print( efit, line_p )
 
                 for ip in range( min(6, len(line_p)) ):
                     if ( ip > 0 ): l_text = l_text + ", "
@@ -735,7 +651,7 @@ class MCADisplay( Display ):
 
                 l_text = "Failed to fit"
             elif ( len(fit) == 6 ):
-                self.croi[il].receiveYWaveform(gaussian2(list(range(start_i*10, end_i*10, 10)), fit[0]   , (fit[1]+start)*10, fit[2]*10, fit[3]   , (fit[4]+start)*10, fit[5]*10))
+                self.croi[il].receiveYWaveform(gaussian2(list(range(start_i*10, end_i*10, 10)), fit[0], (fit[1]+start)*10, fit[2]*10, fit[3], (fit[4]+start)*10, fit[5]*10))
 
                 if ( fit[0] >= 50 ):
                     efit = 10 * ( start + fit[1] )
