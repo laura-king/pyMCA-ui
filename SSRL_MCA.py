@@ -1,7 +1,7 @@
 '''
 File responsonsible for reading and processing data for SSRL_MCA pydm screen.
 
-Original: Unnamed Intern
+Original: 
 Refactored: Laura King
 09/2020
 '''
@@ -20,15 +20,12 @@ from os                     import path, popen
 import pprint
 
 #TODO: command line argument parsing for reading from file vs data stream
-
-#TODO: remove/clean prints to declog terminal
-
+#TODO: open file, cancel deactivates the next mca button >:(
 #TODO: function headers
 
 def build_dic():
     emission = {}
     element = {}
-    #TODO: accept filename as cli arg
     filename = "XRay_Emission_Lines.txt"
 
     with open(filename) as file:
@@ -53,53 +50,25 @@ def build_dic():
             new_energy = new_energy + [0.]*(9 - len(new_energy))
 
             # Set vars to data
-            ka1, ka2, kb1, la1, la2, lb1, lb2, lg1, ma1 = new_energy
-
             element_d = {}
-            #TODO: Do we need all of these dictionaries? a lot of repeated data...
-            # I can probably actually just loop over once and don't even need to assign the variables
-            if ( ka1 != 0 ) and ( ka2 != 0 ):
-                element_d, emission = combine((symbol+"-Ka"), ka1, ka2, element_d, emission)
-            else:
-                if ( ka1 != 0 ):
-                    element_d["Ka1"] = ka1
-                    emission[symbol + "-Ka1"] = ka1
-                if ( ka2 != 0 ):
-                    element_d["Ka2"] = ka2
-                    emission[symbol + "-Ka2"] = ka2
-
-            if ( kb1 != 0 ):
-                element_d["Kb1"] = kb1
-                emission[symbol + "-Kb1"] = kb1
-
-            if ( la1 != 0 ) and ( la2 != 0 ):
-                element_d, emission = combine((symbol+"-La"), la1, la2, element_d, emission)
-            else:
-                if ( la1 != 0 ):
-                    element_d["La1"] = la1
-                    emission[symbol+"-La1"] =  la1
-                if ( la2 != 0 ):
-                    element_d["La2"] = la2
-                    emission[symbol+"-La2"] = la2
-
-            if ( lb1 != 0 ) and ( lb2 != 0 ):
-                element_d, emission = combine((symbol+"-Lb"), lb1, lb2, element_d, emission)
-            else:
-                if ( lb1 != 0 ):
-                    element_d["Lb1"] = lb1
-                    emission [symbol+"-Lb1"] = lb1
-                if ( lb2 != 0 ):
-                    element_d["Lb2"] = lb2
-                    emission [symbol+"-Lb2"] = lb2
-
-            if ( lg1 != 0 ):
-                element_d["Lg1"] = lg1
-                emission [symbol+"-Lg1"] = lg1
-
-            if ( ma1 != 0 ):
-                element_d["Ma1"] = ma1
-                emission [symbol+"-Ma1"] = ma1
-
+            elem_dict = {
+                'Ka': [new_energy[0], new_energy[1]],
+                'Kb': [new_energy[2]],
+                'La': [new_energy[3], new_energy[4]],
+                'Lb': [new_energy[5], new_energy[6]],
+                'Lg': [new_energy[7]],
+                'Ma': [new_energy[8]]
+            }
+            # Filter out 0's, assign data to dictionaries
+            for elem, value_list in elem_dict.items():
+                full_symbol = symbol+"-"+elem
+                if len(value_list) == 2:
+                    if value_list[0] != 0 and value_list[1] != 0:
+                        element_d, emission = combine((full_symbol), value_list, element_d, emission)
+                        continue
+                    else:
+                        element_d, emission = add_to_dicts((full_symbol+"2"), value_list[1], element_d, emission)
+                element_d, emission = add_to_dicts((full_symbol+"1"), value_list[0], element_d, emission)
             element[symbol] = element_d
 
         energy_i = []
@@ -110,16 +79,26 @@ def build_dic():
         energy = sorted( energy_i, key=itemgetter(0) )
         return energy, element
 
-def combine(symbol, first, second, element_d, emission):
-    name = symbol.split('-')[-1]
-    if ( (first - second) > -30 ) and ( (first - second) < 30 ):
-        element_d[name] = (first + second)/2.
-        emission [symbol] = (first + second) / 2.
+def add_to_dicts(symbol, value, element_d, emission):
+    """
+    Adds the value-symbol pair to the element and emission dictionaries
+    """
+    if value != 0:
+        name = symbol.split('-')[-1]
+        element_d[name] = value
+        emission[symbol] = value
+    return element_d, emission
+
+def combine(symbol, value_list, element_d, emission):
+    """
+    Adds the correct symbol-value pairs for the double variables to the 
+    element and emission dictionaries
+    """
+    if ( (value_list[0] - value_list[1]) > -30 ) and ( (value_list[0] - value_list[1]) < 30 ):
+        element_d, emission = add_to_dicts(symbol, ((value_list[0] + value_list[1])/2.), element_d, emission)
     else:
-        element_d[name+"1"] =  first
-        element_d[name+"2"] =  second
-        emission [symbol+"1"] =  first
-        emission [symbol+"2"] =  second
+        element_d, emission = add_to_dicts(symbol+"1", value_list[0], element_d, emission)
+        element_d, emission = add_to_dicts(symbol+"2", value_list[1], element_d, emission)
     return element_d, emission
 
 def gaussian (x, amplitude, mean, sigma):
@@ -142,10 +121,6 @@ class MCADisplay( Display ):
         self.lines = []
         self.num_ROI = 9
 
-
-        #TODO: remove this line i'm adding
-        test=False
-
         self.energy, self.element = build_dic()
 
         self.waveform.plotItem.scene().sigMouseMoved.connect(self.mouseMoved)
@@ -161,10 +136,10 @@ class MCADisplay( Display ):
             self.waveform.addChannel(None, None, name=name, color=color, lineWidth=2)
 
         #TODO: Did they forget Line 10 before...? Or was it intentional? including for now
+        #TODO: is 18 just double the number of ROI's? Are these related?
         for wave in range(18):
             name = f"Line{wave+1:02d}"
             self.waveform.addChannel(None, None, name=name, color="white", lineWidth=2, lineStyle=Qt.DashLine)
-
 
         self.curve = self.waveform._curves[0]
         self.croi = self.waveform._curves[1:10]
@@ -192,42 +167,15 @@ class MCADisplay( Display ):
         if ( macros != None ) and ( "DEVICE" in macros ):
             self.dataSource.addItem( "Live EPICS" )
 
-            #TODO: other file uses macros["DEVICE"]+":RAW:ArrayData"
-            if test:
-                epics = PyDMChannel( address="ca://"+
-                                 macros["DEVICE"]+":RAW:ArrayData",
-                                 value_slot=self.live_data )                
-            else:
-                epics = PyDMChannel( address="ca://"+
+            #TODO:Other file uses macros["DEVICE"]+":RAW:ArrayData"
+            epics = PyDMChannel( address="ca://"+
                                  macros["DEVICE"]+":ARR1:ArrayData",
                                  value_slot=self.live_data )
             epics.connect()
 
-            self.recordNum_l    .hide()
-            self.recordNum      .hide()
-            self.openFile       .hide()
-            self.previousMCA    .hide()
-            self.nextMCA        .hide()
-
-            self.exposure_l     .setEnabled( True  )
-            self.exposure       .setEnabled( True  )
-            self.exposureCount_l.show()
-            self.exposureCount  .show()
-            self.start_b        .show()
-            self.stop_b         .show()
+            self.show_exposure()
         else:
-            self.recordNum_l    .show()
-            self.recordNum      .show()
-            self.openFile       .show()
-            self.previousMCA    .show()
-            self.nextMCA        .show()
-
-            self.exposure_l     .setEnabled( False )
-            self.exposure       .setEnabled( False )
-            self.exposureCount_l.hide()
-            self.exposureCount  .hide()
-            self.start_b        .hide()
-            self.stop_b         .hide()
+            self.show_mca()
 
         self.dataSource.addItem        ( "Playback" )
         self.dataSource.setCurrentIndex( 0 )
@@ -282,34 +230,43 @@ class MCADisplay( Display ):
 
     def change_source(self, *args, **kwargs):
         if ( args[0] == 0 ):
-            self.recordNum_l    .hide()
-            self.recordNum      .hide()
-            self.openFile       .hide()
-            self.previousMCA    .hide()
-            self.nextMCA        .hide()
-
-            self.exposure_l     .setEnabled( True  )
-            self.exposure       .setEnabled( True  )
-            self.exposureCount_l.show()
-            self.exposureCount  .show()
-            self.start_b        .show()
-            self.stop_b         .show()
+            self.show_exposure()
         else:
-            self.recordNum_l    .show()
-            self.recordNum      .show()
-            self.openFile       .show()
-            self.previousMCA    .show()
-            self.nextMCA        .show()
-
-            self.exposure_l     .setEnabled( False )
-            self.exposure       .setEnabled( False )
-            self.exposureCount_l.hide()
-            self.exposureCount  .hide()
-            self.start_b        .hide()
-            self.stop_b         .hide()
-
+            self.show_mca()
         self.previousMCA.setEnabled( False )
         self.nextMCA    .setEnabled( False )
+
+    def show_exposure(self):
+        self.recordNum_l    .hide()
+        self.recordNum      .hide()
+        self.openFile       .hide()
+        self.previousMCA    .hide()
+        self.nextMCA        .hide()
+
+        self.exposure_l     .setEnabled( True  )
+        self.exposure       .setEnabled( True  )
+        self.exposureCount_l.show()
+        self.exposureCount  .show()
+        self.start_b        .show()
+        self.stop_b         .show()
+        return
+
+    def show_mca(self):
+        self.recordNum_l    .show()
+        self.recordNum      .show()
+        self.openFile       .show()
+        self.previousMCA    .show()
+        self.nextMCA        .show()
+
+        self.exposure_l     .setEnabled( False )
+        self.exposure       .setEnabled( False )
+        self.exposureCount_l.hide()
+        self.exposureCount  .hide()
+        self.start_b        .hide()
+        self.stop_b         .hide()
+        return
+
+
 
     def live_data(self, new_waveform):
         self.record = new_waveform
@@ -320,8 +277,6 @@ class MCADisplay( Display ):
         fname = QtWidgets.QFileDialog.getOpenFileName(self, "Open file", "", "Data files (*.dat);;All files (*.*)" )
 
         if ( fname[0] != "" ):
-            #Not every comp has cat, readlines() can cause memory failures for large files
-            #self.record = popen("cat "+fname[0]).readlines()
             with open(fname[0]) as f:
                 self.record = [line.rstrip() for line in f]
         else:                  
@@ -378,7 +333,7 @@ class MCADisplay( Display ):
             ypeak = max(y_array[xl:xr+1])
             xpeak = y_array[xl:xr+1].index(ypeak) + xl
 
-            print( "Fit0 ", ri, xl, xr, xpeak, ypeak )
+            #print( "Fit0 ", ri, xl, xr, xpeak, ypeak )
             try:
                 if ( self.fitc == "Cauchy" ):
                     fit, tmp = curve_fit(cauchy, list(range(xl, xr+1)), y_array[xl:xr+1], p0=[ypeak, (xr+xl)/2., (xr-xl)/4.])
@@ -392,12 +347,12 @@ class MCADisplay( Display ):
             if ( fit != [] ) and ( ((fit[1]-xl)/(xr-xl) < 0.35) or ((fit[1]-xl)/(xr-xl) > 0.65) ):
                 try:
                     fit2, tmp = curve_fit(gaussian2, list(range(xl, xr+1)), y_array[xl:xr+1], p0=[fit[0], fit[1], fit[2], self.num_ROI, xl+xr-fit[1], (xr-xl)/4.])
-                    print( "Fit2: ", fit2 )
+                    #print( "Fit2: ", fit2 )
                     fit = fit2
                 except:
                     pass
 
-            print( "Fit i: ", xl, xr, fit )
+            #print( "Fit i: ", xl, xr, fit )
             ret_i.append( [ xl, xr, ypeak, xpeak, fit ] )
 
             work_d.append([xl, xr])
@@ -424,7 +379,7 @@ class MCADisplay( Display ):
         while( len(work_l) > 0 ):
             work_i = sorted( work_l, key=itemgetter(0), reverse=True )
             work_l = work_i[1:]
-            print( "Work List: ", work_i )
+            #print( "Work List: ", work_i )
 
             if ( work_i[0][0] < 80 ): continue                  # counts too low
 
@@ -528,7 +483,7 @@ class MCADisplay( Display ):
 
             ret_l.append( [ xl+xmin, xr+xmin, ypeak, xpeak+xmin, fit ] )
 
-            print( "Fit: ", xl+xmin, xr+xmin, fit )
+            #print( "Fit: ", xl+xmin, xr+xmin, fit )
 
             if ( len(ret_i)+len(ret_l) == 10 ): break
 
@@ -568,7 +523,6 @@ class MCADisplay( Display ):
         self.counts0.setText('{:.0f}'.format(sum0))
 
         ret_l = self.find_peak(y_array)
-        #print( ret_l )
 
         for il in range(self.num_ROI):
             if ( len(ret_l) > il ):
