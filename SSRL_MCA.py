@@ -71,6 +71,10 @@ def build_dic():
                 element_d, emission = add_to_dicts((full_symbol+"1"), value_list[0], element_d, emission)
             element[symbol] = element_d
 
+            print(full_symbol)
+            pprint.pprint(elem_dict)
+            pprint.pprint(element_d)
+
         energy_i = []
         for key in emission.keys():
             keys = key.split( "-" )
@@ -111,19 +115,22 @@ def gaussian2(x, ampl1, mean1, sigma1, ampl2, mean2, sigma2):
 def cauchy(x, amplitude, mean, gamma):
     return amplitude * gamma / ((x-mean)*(x-mean) + gamma*gamma)
 
+
+
 class MCADisplay( Display ):
     def __init__(self, parent=None, args=None, macros=None):
         super(MCADisplay, self).__init__(parent=parent, args=args, macros=macros)
+        self.num_ROI = 9
         self.ROI = []
         self.start = []
         self.end = []
         self.counts = []
         self.lines = []
-        self.num_ROI = 9
+        self.set_ROI_widgets()
 
         self.energy, self.element = build_dic()
 
-        self.waveform.plotItem.scene().sigMouseMoved.connect(self.mouseMoved)
+        self.waveform.plotItem.scene().sigMouseMoved.connect(self.mouse_moved)
         self.waveform.setXLabels(["Energy (eV)"])
         self.waveform.setYLabels(["Count"      ])
 
@@ -144,19 +151,6 @@ class MCADisplay( Display ):
         self.curve = self.waveform._curves[0]
         self.croi = self.waveform._curves[1:10]
         self.line = self.waveform._curves[10:28]
-        
-        for i in range(1, self.num_ROI+1):
-            roi = f"ROI{i}"
-            start = f"start{i}"
-            end = f"end{i}"
-            counts = f"counts{i}"
-            lines = f"lines{i}"
-
-            self.ROI.append(self.findChild(QtWidgets.QCheckBox, roi))
-            self.start.append(self.findChild(QtWidgets.QLineEdit, start))
-            self.end.append(self.findChild(QtWidgets.QLineEdit, end))
-            self.counts.append(self.findChild(QtWidgets.QLineEdit, counts))
-            self.lines.append(self.findChild(QtWidgets.QLineEdit, lines))
 
         if ( macros != None ) and ( "FIT" in macros ):
             if ( macros["FIT"].lower() == "cauchy" ): self.fitc = "Cauchy"
@@ -192,6 +186,18 @@ class MCADisplay( Display ):
         self.record   = []
         self.record_i = 0
 
+    def set_ROI_widgets(self):
+        """
+        Appends all ROI related fields to their related lists in Display for reference
+        """
+        for i in range(1, self.num_ROI+1):
+            self.ROI.append(self.findChild(QtWidgets.QCheckBox, f"ROI{i}"))
+            self.start.append(self.findChild(QtWidgets.QLineEdit, f"start{i}"))
+            self.end.append(self.findChild(QtWidgets.QLineEdit, f"end{i}"))
+            self.counts.append(self.findChild(QtWidgets.QLineEdit, f"counts{i}"))
+            self.lines.append(self.findChild(QtWidgets.QLineEdit, f"lines{i}"))
+        return 
+
     def ui_filename(self):
         return 'SSRL_MCA.ui'
 
@@ -199,7 +205,10 @@ class MCADisplay( Display ):
         return path.join(path.dirname(path.realpath(__file__)),                \
                          self.ui_filename())
 
-    def mouseMoved(self, point):
+    def mouse_moved(self, point):
+        """
+        Tracks the mouse movement in the view
+        """
         if ( not self.waveform.sceneBoundingRect().contains(point) ):
             return
 
@@ -274,6 +283,9 @@ class MCADisplay( Display ):
         self.handle_mca()
 
     def open_file(self, *args, **kwargs):
+        """
+        Opens the data file specified by the user and sends for MCA processing
+        """
         fname = QtWidgets.QFileDialog.getOpenFileName(self, "Open file", "", "Data files (*.dat);;All files (*.*)" )
 
         if ( fname[0] != "" ):
