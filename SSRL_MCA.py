@@ -287,19 +287,17 @@ class MCADisplay( Display ):
         Opens the data file specified by the user and sends for MCA processing
         """
         fname = QtWidgets.QFileDialog.getOpenFileName(self, "Open file", "", "Data files (*.dat);;All files (*.*)" )
-
-        if ( fname[0] != "" ):
-            with open(fname[0]) as f:
-                self.record = [line.rstrip() for line in f]
-        else:                  
-            self.record = []
-
+        # No file selected
+        if ( fname[0] == "" ):
+            return
+            
+        with open(fname[0]) as f:
+            self.record = [line.rstrip() for line in f]
         self.record_i = 0
+
         if ( len(self.record) > 0 ):
             if ( len(self.record) > 1 ): self.nextMCA.setEnabled( True )
-
             self.handle_mca()
-
         self.previousMCA.setEnabled( False )
 
     def previous_mca(self, *args, **kwargs):
