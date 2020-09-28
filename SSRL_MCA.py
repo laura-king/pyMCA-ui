@@ -5,7 +5,7 @@ Original:
 Refactored: Laura King
 09/2020
 '''
-import math, time
+import math, time, argparse
 import numpy                as np
 import scipy.signal         as signal
 
@@ -17,16 +17,13 @@ from scipy.optimize         import curve_fit
 from operator               import itemgetter
 from os                     import path, popen
 
-import pprint
-
-#TODO: command line argument parsing for reading from file vs data stream
-#TODO: open file, cancel deactivates the next mca button >:(
-#TODO: function headers
-
-def build_dic():
+def build_dic(cli_args):
     emission = {}
     element = {}
     filename = "XRay_Emission_Lines.txt"
+
+    if cli_args.filename:
+        filename = cli_args.filename
 
     with open(filename) as file:
         for line in file:
@@ -70,10 +67,6 @@ def build_dic():
                         element_d, emission = add_to_dicts((full_symbol+"2"), value_list[1], element_d, emission)
                 element_d, emission = add_to_dicts((full_symbol+"1"), value_list[0], element_d, emission)
             element[symbol] = element_d
-
-            print(full_symbol)
-            pprint.pprint(elem_dict)
-            pprint.pprint(element_d)
 
         energy_i = []
         for key in emission.keys():
@@ -127,8 +120,9 @@ class MCADisplay( Display ):
         self.counts = []
         self.lines = []
         self.set_ROI_widgets()
+        cli_args = self.parse_args(args)
 
-        self.energy, self.element = build_dic()
+        self.energy, self.element = build_dic(cli_args)
 
         self.waveform.plotItem.scene().sigMouseMoved.connect(self.mouse_moved)
         self.waveform.setXLabels(["Energy (eV)"])
@@ -142,7 +136,7 @@ class MCADisplay( Display ):
             color = color_list[wave%len(color_list)]
             self.waveform.addChannel(None, None, name=name, color=color, lineWidth=2)
 
-        #TODO: Did they forget Line 10 before...? Or was it intentional? including for now
+        #TODO:? Did they forget Line 10 before...? Or was it intentional? including for now
         #TODO: is 18 just double the number of ROI's? Are these related?
         for wave in range(18):
             name = f"Line{wave+1:02d}"
@@ -161,7 +155,7 @@ class MCADisplay( Display ):
         if ( macros != None ) and ( "DEVICE" in macros ):
             self.dataSource.addItem( "Live EPICS" )
 
-            #TODO:Other file uses macros["DEVICE"]+":RAW:ArrayData"
+            #TODO:? Other file uses macros["DEVICE"]+":RAW:ArrayData"
             epics = PyDMChannel( address="ca://"+
                                  macros["DEVICE"]+":ARR1:ArrayData",
                                  value_slot=self.live_data )
@@ -231,6 +225,13 @@ class MCADisplay( Display ):
         self.mouse_c.setText( str(int(point_v.y())) )
         self.mouse_p.setText( l_text                )
 
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--f', dest='filename', help='Input filename as string to be opened.')
+        parser.add_argument('--d', dest='data', help='Indicator that data should be read through stream.')
+        parsed_args, _unknown_args = parser.parse_known_args(args)
+        return parsed_args
+
     def full_view(self, *args, **kwargs):
 #       self.waveform.enableAutoRange()
 
@@ -290,7 +291,7 @@ class MCADisplay( Display ):
         # No file selected
         if ( fname[0] == "" ):
             return
-            
+
         with open(fname[0]) as f:
             self.record = [line.rstrip() for line in f]
         self.record_i = 0
@@ -301,7 +302,7 @@ class MCADisplay( Display ):
         self.previousMCA.setEnabled( False )
 
     def previous_mca(self, *args, **kwargs):
-        print('Previous MCA ...')
+        #print('Previous MCA ...')
 
         self.record_i = self.record_i - 1
         if ( self.record_i == 0 ): self.previousMCA.setEnabled( False )
@@ -311,7 +312,7 @@ class MCADisplay( Display ):
         self.handle_mca()
 
     def next_mca(self, *args, **kwargs):
-        print('Next MCA ...')
+        #print('Next MCA ...')
 
         self.record_i = self.record_i + 1
         if ( self.record_i == len(self.record)-1 ): self.nextMCA.setEnabled( False )

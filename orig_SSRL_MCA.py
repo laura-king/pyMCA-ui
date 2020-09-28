@@ -162,17 +162,16 @@ def build_dic():
             emission [symbol+"-Ma1"] =  ma1
 
         element[symbol] = element_d
-    pprint.pprint(emission)
-    print("Element D")
-    pprint.pprint(element_d)
-    print("Element")
-    pprint.pprint(element)
+
     energy_i = []
     for key in emission.keys():
         xxx = key.split( "-" )
         energy_i.append( [emission[key], xxx[0], xxx[1]] )
 
     energy = sorted( energy_i, key=itemgetter(0) )
+    pprint.pprint(element)
+    pprint.pprint(emission)
+    pprint.pprint(energy)
 
 def gaussian (x, amplitude, mean, sigma):
     return amplitude * np.exp(-((x-mean)/sigma)**2/2.)
@@ -512,7 +511,7 @@ class MCADisplay( Display ):
         for ri in range(9):
             if ( self.ROI[ri].checkState() != 2 ): continue
 
-            print( "ROI: ", ri )
+            #print( "ROI: ", ri )
             try:
                 xl     = math.floor(int(self.start[ri].text()) / 10.)
                 xr     = math.floor(int(self.end  [ri].text()) / 10.)
@@ -520,7 +519,7 @@ class MCADisplay( Display ):
             except:
                 continue
 
-            print( "ROI: ", ri, xl, xr )
+            #print( "ROI: ", ri, xl, xr )
             if ( points < 12 ): continue
 
             xl    = xl - start
@@ -529,7 +528,7 @@ class MCADisplay( Display ):
             ypeak = max(y_array[xl:xr+1])
             xpeak = y_array[xl:xr+1].index(ypeak) + xl
 
-            print( "Fit0 ", ri, xl, xr, xpeak, ypeak )
+            #print( "Fit0 ", ri, xl, xr, xpeak, ypeak )
             try:
                 if ( self.fitc == "Cauchy" ):
                     fit, tmp = curve_fit(cauchy,    list(range(xl, xr+1)),     \
@@ -558,7 +557,7 @@ class MCADisplay( Display ):
                     fit2, tmp = curve_fit(gaussian2, list(range(xl, xr+1)),    \
                                                      y_array[xl:xr+1],         \
                                                      p0=[fit[0], fit[1], fit[2], 9, xl+xr-fit[1], (xr-xl)/4.])
-                    print( "Fit2: ", fit2 )
+                    #print( "Fit2: ", fit2 )
                     fit = fit2
                 except:
                     pass
@@ -566,7 +565,7 @@ class MCADisplay( Display ):
 #           if ( len(fit) == 6 ) and ( fit[3] > fit[0] ):
 #               fit = fit[3:] + fit[:3]
 
-            print( "Fit i: ", xl, xr, fit )
+            #print( "Fit i: ", xl, xr, fit )
             ret_i.append( [ xl, xr, ypeak, xpeak, fit ] )
 
             work_d.append([xl, xr])
@@ -593,7 +592,7 @@ class MCADisplay( Display ):
         while( len(work_l) > 0 ):
             work_i = sorted( work_l, key=itemgetter(0), reverse=True )
             work_l = work_i[1:]
-            print( "Work List: ", work_i )
+            #print( "Work List: ", work_i )
 
             if ( work_i[0][0] < 80 ): continue                  # counts too low
 
@@ -701,7 +700,7 @@ class MCADisplay( Display ):
 
             ret_l.append( [ xl+xmin, xr+xmin, ypeak, xpeak+xmin, fit ] )
 
-            print( "Fit: ", xl+xmin, xr+xmin, fit )
+            #print( "Fit: ", xl+xmin, xr+xmin, fit )
 
             if ( len(ret_i)+len(ret_l) == 10 ): break
 
@@ -741,7 +740,7 @@ class MCADisplay( Display ):
         self.counts0.setText('{:.0f}'.format(sum0))
 
         ret_l = self.find_peak(y_array)
-        print( ret_l )
+        #print( ret_l )
 
         for il in range( 9 ):
             if ( len(ret_l) > il ):
@@ -803,7 +802,7 @@ class MCADisplay( Display ):
 
                 line_e = [ ei for ei in energy if ((ei[0] > emin) and (ei[0] < emax)) ]
                 line_p = sorted( line_e, key=itemgetter(2) )
-                print( efit, line_p )
+                #print( efit, line_p )
 
                 for ip in range( min(6, len(line_p)) ):
                     if ( ip > 0 ): l_text = l_text + ", "
