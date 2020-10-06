@@ -188,10 +188,10 @@ class MCADisplay(Display):
             self.dataSource.addItem("Live EPICS")
 
             # TODO: Other file uses macros["DEVICE"]+":RAW:ArrayData"
-            epics = PyDMChannel(address="ca://" +
+            self.epics = PyDMChannel(address="ca://" +
                                 macros["DEVICE"] + ":ARR1:ArrayData",
                                 value_slot=self.live_data)
-            epics.connect()
+            self.epics.connect()
 
             self.show_exposure()
         else:
@@ -201,10 +201,11 @@ class MCADisplay(Display):
         self.dataSource.setCurrentIndex(0)
         self.dataSource.currentIndexChanged.connect(self.change_source)
 
-        self.openFile   .clicked           .connect(self.open_file)
-        self.previousMCA.clicked           .connect(self.previous_mca)
-        self.nextMCA    .clicked           .connect(self.next_mca)
-        self.fullView   .clicked           .connect(self.full_view)
+        self.connectButton.clicked.connect(self.connect_data)
+        self.openFile.clicked.connect(self.open_file)
+        self.previousMCA.clicked.connect(self.previous_mca)
+        self.nextMCA.clicked.connect(self.next_mca)
+        self.fullView.clicked.connect(self.full_view)
 
         self.previousMCA.setEnabled(False)
         self.nextMCA    .setEnabled(False)
@@ -288,15 +289,17 @@ class MCADisplay(Display):
             self.show_exposure()
         else:
             self.show_mca()
-        self.previousMCA.setEnabled(False)
-        self.nextMCA    .setEnabled(False)
+        #self.previousMCA.setEnabled(False)
+        #self.nextMCA    .setEnabled(False)
 
     def show_exposure(self):
+        """
         self.recordNum_l    .hide()
         self.recordNum      .hide()
         self.openFile       .hide()
         self.previousMCA    .hide()
         self.nextMCA        .hide()
+        """
 
         self.exposure_l     .setEnabled(True)
         self.exposure       .setEnabled(True)
@@ -313,16 +316,30 @@ class MCADisplay(Display):
         self.previousMCA    .show()
         self.nextMCA        .show()
 
+        """
         self.exposure_l     .setEnabled(False)
         self.exposure       .setEnabled(False)
         self.exposureCount_l.hide()
         self.exposureCount  .hide()
         self.start_b        .hide()
         self.stop_b         .hide()
+        """
+        return
+
+    def connect_data(self):
+        self.epics.connect()
+        return 
+
+    def disconnect_data(self):
+        if self.epics:
+            self.epics.disconnect()
         return
 
     def live_data(self, new_waveform):
         self.record = new_waveform
+        # TODO: this is going to be overwriting the entire list with only one
+        # waveform? Shouldn't this just be appended so that we can go backwords and 
+        #forwards as wished?
 
         self.handle_mca()
 
@@ -336,6 +353,8 @@ class MCADisplay(Display):
         if (fname[0] == ""):
             return
 
+        self.openFilename.setText(fname[0])
+        # TODO: parses all at once and throws into one list of line by line, I imagine I'll need to just populate a line at a time as it comes in?
         with open(fname[0]) as f:
             self.record = [line.rstrip() for line in f]
         self.record_i = 0
@@ -586,7 +605,10 @@ class MCADisplay(Display):
         return ret_i + sorted(ret_l, key=itemgetter(0))
 
     def handle_mca(self):
+        # TODO: 
+        # Seems like it should have a different comparison
         if (self.dataSource.currentText() == "Live EPICS"):
+            # Need to set self.record based on data coming in
             items = self.record
         else:
             items = list(map(int, self.record[self.record_i].split()))
