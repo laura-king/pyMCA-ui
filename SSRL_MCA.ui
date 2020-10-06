@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string>SSRL MCA Display</string>
   </property>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>9</x>
@@ -5525,7 +5525,7 @@
          </size>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="DataTab">
          <attribute name="title">
@@ -6658,7 +6658,7 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QLabel" name="openFileName">
+            <widget class="QLabel" name="openFilename">
              <property name="text">
               <string>None</string>
              </property>
