@@ -4140,7 +4140,7 @@
        </layout>
       </item>
       <item>
-       <widget class="QTabWidget" name="tabWidget">
+       <widget class="QTabWidget" name="dataSourceTabWidget">
         <property name="maximumSize">
          <size>
           <width>400</width>
@@ -4148,9 +4148,9 @@
          </size>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
-        <widget class="QWidget" name="DataTab">
+        <widget class="QWidget" name="dataTab">
          <attribute name="title">
           <string>Live Data</string>
          </attribute>
@@ -5033,7 +5033,7 @@
           </layout>
          </widget>
         </widget>
-        <widget class="QWidget" name="FileTab">
+        <widget class="QWidget" name="fileTab">
          <attribute name="title">
           <string>Static File</string>
          </attribute>
