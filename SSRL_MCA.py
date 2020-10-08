@@ -611,9 +611,13 @@ class MCADisplay(Display):
         # Seems like it should have a different comparison
         if (self.dataSource.currentText() == "Live EPICS"):
             # Need to set self.record based on data coming in
+            print("in live epics")
             items = self.record
+            print(self.record)
         else:
             items = list(map(int, self.record[self.record_i].split()))
+            print("other items")
+            print(items)
 
         start = math.floor(int(self.start0.text()) / 10.)
         end = math.ceil(int(self.end0  .text()) / 10.) + 1
