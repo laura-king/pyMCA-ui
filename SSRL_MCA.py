@@ -185,21 +185,17 @@ class MCADisplay(Display):
             self.fitc = "Gaussian"
 
         if (macros is not None) and ("DEVICE" in macros):
-            self.dataSource.addItem("Live EPICS")
 
             # TODO: Other file uses macros["DEVICE"]+":RAW:ArrayData"
             self.epics = PyDMChannel(address="ca://" +
                                 macros["DEVICE"] + ":ARR1:ArrayData",
                                 value_slot=self.live_data)
-            self.epics.connect()
+            self.connect_data()
 
             self.show_exposure()
         else:
             self.show_mca()
 
-        self.dataSource.addItem("Playback")
-        self.dataSource.setCurrentIndex(0)
-        self.dataSource.currentIndexChanged.connect(self.change_source)
         self.dataSourceTabWidget.currentChanged.connect(self.change_tab_source)
 
         self.connectButton.clicked.connect(self.connect_data)
@@ -295,23 +291,22 @@ class MCADisplay(Display):
     
     def change_tab_source(self):
         if (self.dataSourceTabWidget.currentWidget() == self.dataTab):
+            self.show_exposure()
             self.connect_data()
-            # TODO: reconnect channel?
         elif (self.dataSourceTabWidget.currentWidget() == self.fileTab):
             # TODO: confirmation that you want to switch to file
-            # TODO: disconnect feature
+            self.show_mca()
             self.disconnect_data()
         return
 
+
     def show_exposure(self):
-        """
         self.recordNum_l    .hide()
         self.recordNum      .hide()
         self.openFile       .hide()
         self.previousMCA    .hide()
         self.nextMCA        .hide()
-        """
-
+        
         self.exposure_l     .setEnabled(True)
         self.exposure       .setEnabled(True)
         self.exposureCount_l.show()
@@ -321,31 +316,30 @@ class MCADisplay(Display):
         return
 
     def show_mca(self):
+        self.openFilename.setText("None")
         self.recordNum_l    .show()
         self.recordNum      .show()
         self.openFile       .show()
         self.previousMCA    .show()
         self.nextMCA        .show()
-        self.start_b        .show()
-        self.stop_b         .show()
 
-        """
         self.exposure_l     .setEnabled(False)
         self.exposure       .setEnabled(False)
         self.exposureCount_l.hide()
         self.exposureCount  .hide()
         self.start_b        .hide()
         self.stop_b         .hide()
-        """
         return
 
     def connect_data(self):
         self.epics.connect()
+        self.connectStatusLabel.setText("Connected")
         return 
 
     def disconnect_data(self):
         if self.epics:
             self.epics.disconnect()
+            self.connectStatusLabel.setText("Disconnected")
         return
 
     def live_data(self, new_waveform):
