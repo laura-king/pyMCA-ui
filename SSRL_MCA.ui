@@ -4148,7 +4148,7 @@
          </size>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="dataTab">
          <attribute name="title">
@@ -5125,7 +5125,7 @@
             </spacer>
            </item>
            <item row="4" column="0">
-            <widget class="QLabel" name="recordNum_l_2">
+            <widget class="QLabel" name="recordNum_l">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>120</horstretch>
@@ -5154,7 +5154,7 @@
             </widget>
            </item>
            <item row="4" column="1">
-            <widget class="QLineEdit" name="recordNum_2">
+            <widget class="QLineEdit" name="recordNum">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>0</horstretch>
