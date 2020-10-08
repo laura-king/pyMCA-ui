@@ -339,10 +339,8 @@ class MCADisplay(Display):
 
     def live_data(self, new_waveform):
         self.record = new_waveform
-        # TODO: this is going to be overwriting the entire list with only one
-        # waveform? Shouldn't this just be appended so that we can go backwords and 
-        #forwards as wished?
-
+        if not self.record.any():
+            return
         self.handle_mca()
 
     def open_file(self, *args, **kwargs):
@@ -356,7 +354,6 @@ class MCADisplay(Display):
             return
 
         self.openFilename.setText(fname[0])
-        # TODO: parses all at once and throws into one list of line by line, I imagine I'll need to just populate a line at a time as it comes in?
         with open(fname[0]) as f:
             self.record = [line.rstrip() for line in f]
         self.record_i = 0
@@ -609,17 +606,13 @@ class MCADisplay(Display):
     def handle_mca(self):
         # TODO: 
         # Seems like it should have a different comparison
-        if (self.dataSource.currentText() == "Live EPICS"):
+
+        if (self.dataSourceTabWidget.currentWidget() == self.dataTab):
             # Need to set self.record based on data coming in
-            print("in live epics")
+            print("live data")
             items = self.record
-            print(self.record)
         else:
             items = list(map(int, self.record[self.record_i].split()))
-            print("other items")
-            print(items)
-        if not items.any():
-            return
 
         start = math.floor(int(self.start0.text()) / 10.)
         end = math.ceil(int(self.end0  .text()) / 10.) + 1
