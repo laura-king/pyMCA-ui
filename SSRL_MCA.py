@@ -315,6 +315,8 @@ class MCADisplay(Display):
         self.openFile       .show()
         self.previousMCA    .show()
         self.nextMCA        .show()
+        self.start_b        .show()
+        self.stop_b         .show()
 
         """
         self.exposure_l     .setEnabled(False)
