@@ -618,6 +618,8 @@ class MCADisplay(Display):
             items = list(map(int, self.record[self.record_i].split()))
             print("other items")
             print(items)
+        if not items.any():
+            return
 
         start = math.floor(int(self.start0.text()) / 10.)
         end = math.ceil(int(self.end0  .text()) / 10.) + 1
