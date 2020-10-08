@@ -200,6 +200,7 @@ class MCADisplay(Display):
         self.dataSource.addItem("Playback")
         self.dataSource.setCurrentIndex(0)
         self.dataSource.currentIndexChanged.connect(self.change_source)
+        self.dataSourceTabWidget.currentChanged.connect(self.change_tab_source)
 
         self.connectButton.clicked.connect(self.connect_data)
         self.openFile.clicked.connect(self.open_file)
@@ -291,6 +292,16 @@ class MCADisplay(Display):
             self.show_mca()
         #self.previousMCA.setEnabled(False)
         #self.nextMCA    .setEnabled(False)
+    
+    def change_tab_source(self):
+        if (self.dataSourceTabWidget.currentWidget() == self.dataTab):
+            self.connect_data()
+            # TODO: reconnect channel?
+        elif (self.dataSourceTabWidget.currentWidget() == self.fileTab):
+            # TODO: confirmation that you want to switch to file
+            # TODO: disconnect feature
+            self.disconnect_data()
+        return
 
     def show_exposure(self):
         """
@@ -353,7 +364,10 @@ class MCADisplay(Display):
         if (fname[0] == ""):
             return
 
-        self.openFilename.setText(fname[0])
+        # Windows-based paths will return full path
+        base_filename = path.basename(fname[0])
+        self.openFilename.setText(base_filename)
+
         with open(fname[0]) as f:
             self.record = [line.rstrip() for line in f]
         self.record_i = 0
@@ -604,12 +618,8 @@ class MCADisplay(Display):
         return ret_i + sorted(ret_l, key=itemgetter(0))
 
     def handle_mca(self):
-        # TODO: 
-        # Seems like it should have a different comparison
-
+        #Checks open tab widget to determine what data source is being used
         if (self.dataSourceTabWidget.currentWidget() == self.dataTab):
-            # Need to set self.record based on data coming in
-            print("live data")
             items = self.record
         else:
             items = list(map(int, self.record[self.record_i].split()))
