@@ -136,6 +136,9 @@ class MCADisplay(Display):
         # Debug Logger
         self.logger = logging.getLogger('mca_logger')
         self.separator = "\n" + ("-" * 20) + "\n"
+        
+        self.macro_dict = macros
+        self.display_state = 'DATA'
 
         self.num_ROI = 9
         self.ROI = []
@@ -176,29 +179,23 @@ class MCADisplay(Display):
         self.croi = self.waveform._curves[1:10]
         self.line = self.waveform._curves[10:28]
 
-        if (macros is not None) and ("FIT" in macros):
-            if (macros["FIT"].lower() == "cauchy"):
+        if (self.macro_dict is not None) and ("FIT" in self.macro_dict):
+            if (self.macro_dict["FIT"].lower() == "cauchy"):
                 self.fitc = "Cauchy"
             else:
                 self.fitc = "Gaussian"
         else:
             self.fitc = "Gaussian"
 
-        if (macros is not None) and ("DEVICE" in macros):
+        if (self.macro_dict is not None) and ("DEVICE" in self.macro_dict):
 
             # TODO: Other file uses macros["DEVICE"]+":RAW:ArrayData"
-            self.epics = PyDMChannel(address="ca://" +
-                                macros["DEVICE"] + ":ARR1:ArrayData",
-                                value_slot=self.live_data)
             self.connect_data()
-
-            self.show_exposure()
         else:
             self.show_mca()
 
         self.dataSourceTabWidget.currentChanged.connect(self.change_tab_source)
 
-        self.connectButton.clicked.connect(self.connect_data)
         self.openFile.clicked.connect(self.open_file)
         self.previousMCA.clicked.connect(self.previous_mca)
         self.nextMCA.clicked.connect(self.next_mca)
@@ -290,13 +287,26 @@ class MCADisplay(Display):
         #self.nextMCA    .setEnabled(False)
     
     def change_tab_source(self):
+        """
+        Called when tab indicating current data source is changed
+        """
+        #self.stop_b.click()
+        # Switching to live data 
         if (self.dataSourceTabWidget.currentWidget() == self.dataTab):
+            self.display_state = "DATA"
             self.show_exposure()
             self.connect_data()
+        # Switching to reading from file
         elif (self.dataSourceTabWidget.currentWidget() == self.fileTab):
-            # TODO: confirmation that you want to switch to file
-            self.show_mca()
-            self.disconnect_data()
+            file_message = QtWidgets.QMessageBox.question(
+                self, 'Switching to File', 'Close live data connection?',
+                QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Yes)
+            if file_message == QtWidgets.QMessageBox.No:
+                self.dataSourceTabWidget.setCurrentWidget(self.dataTab)
+            else:
+                self.display_state = "FILE"
+                self.show_mca()
+                self.disconnect_data()
         return
 
 
@@ -332,11 +342,16 @@ class MCADisplay(Display):
         return
 
     def connect_data(self):
+        self.epics = PyDMChannel(address="ca://" +
+                            self.macro_dict["DEVICE"] + ":ARR1:ArrayData",
+                            value_slot=self.live_data)
         self.epics.connect()
+        self.show_exposure()
         self.connectStatusLabel.setText("Connected")
         return 
 
     def disconnect_data(self):
+        # TODO: self.epics breaks when there's no connection :(
         if self.epics:
             self.epics.disconnect()
             self.connectStatusLabel.setText("Disconnected")
@@ -613,8 +628,9 @@ class MCADisplay(Display):
 
     def handle_mca(self):
         #Checks open tab widget to determine what data source is being used
-        if (self.dataSourceTabWidget.currentWidget() == self.dataTab):
+        if (self.display_state == "DATA"):
             items = self.record
+        # File connection
         else:
             items = list(map(int, self.record[self.record_i].split()))
 
