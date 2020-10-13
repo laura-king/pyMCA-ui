@@ -272,7 +272,7 @@ class MCADisplay(Display):
 
     def change_tab_source(self):
         """
-        Called when tab changed responsible for indicating current data source
+        Called when tab responsible for indicating current data source is changed
         """
         # If we are in the right state already, do nothing
         if (self.dataSourceTabWidget.currentWidget() == self.dataTab and self.display_state == "DATA") or \
@@ -362,6 +362,7 @@ class MCADisplay(Display):
         """
         # TODO: self.epics breaks when there's no connection :(
         if self.epics:
+            self.epics.disconnect()
             self.connectStatusLabel.setText("Disconnected")
         self.display_state = "FILE"
         return
