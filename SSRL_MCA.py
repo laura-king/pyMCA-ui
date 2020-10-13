@@ -138,7 +138,7 @@ class MCADisplay(Display):
         self.separator = "\n" + ("-" * 20) + "\n"
         
         self.macro_dict = macros
-        self.display_state = 'DATA'
+        self.display_state = 'FILE'
 
         self.num_ROI = 9
         self.ROI = []
@@ -187,12 +187,7 @@ class MCADisplay(Display):
         else:
             self.fitc = "Gaussian"
 
-        if (self.macro_dict is not None) and ("DEVICE" in self.macro_dict):
-
-            # TODO: Other file uses macros["DEVICE"]+":RAW:ArrayData"
-            self.connect_data()
-        else:
-            self.show_mca()
+        self.connect_data()
 
         self.dataSourceTabWidget.currentChanged.connect(self.change_tab_source)
 
@@ -260,40 +255,31 @@ class MCADisplay(Display):
         self.mouse_p.setText(l_text)
 
     def parse_args(self, args):
+        """
+        Argument parser for the option to read a file from command line
+        """
         parser = argparse.ArgumentParser()
         parser.add_argument(
             '--f',
             dest='filename',
             help='Input filename as string to be opened.')
-        parser.add_argument(
-            '--d',
-            dest='data',
-            help='Indicator that data should be read through stream.')
         parsed_args, _unknown_args = parser.parse_known_args(args)
         return parsed_args
 
     def full_view(self, *args, **kwargs):
-        #       self.waveform.enableAutoRange()
-
         self.waveform.resetAutoRangeX()
         self.waveform.resetAutoRangeY()
 
-    def change_source(self, *args, **kwargs):
-        if (args[0] == 0):
-            self.show_exposure()
-        else:
-            self.show_mca()
-        #self.previousMCA.setEnabled(False)
-        #self.nextMCA    .setEnabled(False)
-    
     def change_tab_source(self):
         """
-        Called when tab indicating current data source is changed
+        Called when tab changed responsible for indicating current data source
         """
-        #self.stop_b.click()
+        # If we are in the right state already, do nothing
+        if (self.dataSourceTabWidget.currentWidget() == self.dataTab and self.display_state == "DATA") or \
+           (self.dataSourceTabWidget.currentWidget() == self.fileTab and self.display_state == "FILE"):
+           return
         # Switching to live data 
         if (self.dataSourceTabWidget.currentWidget() == self.dataTab):
-            self.display_state = "DATA"
             self.show_exposure()
             self.connect_data()
         # Switching to reading from file
@@ -303,14 +289,18 @@ class MCADisplay(Display):
                 QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Yes)
             if file_message == QtWidgets.QMessageBox.No:
                 self.dataSourceTabWidget.setCurrentWidget(self.dataTab)
+                return
             else:
                 self.display_state = "FILE"
-                self.show_mca()
                 self.disconnect_data()
+            self.show_mca()
         return
 
 
     def show_exposure(self):
+        """
+        Modifies UI to reflect features for live data processing
+        """
         self.recordNum_l    .hide()
         self.recordNum      .hide()
         self.openFile       .hide()
@@ -326,7 +316,9 @@ class MCADisplay(Display):
         return
 
     def show_mca(self):
-        self.openFilename.setText("None")
+        """
+        Modifies UI to reflect features for static file data processing
+        """
         self.recordNum_l    .show()
         self.recordNum      .show()
         self.openFile       .show()
@@ -342,19 +334,36 @@ class MCADisplay(Display):
         return
 
     def connect_data(self):
-        self.epics = PyDMChannel(address="ca://" +
-                            self.macro_dict["DEVICE"] + ":ARR1:ArrayData",
-                            value_slot=self.live_data)
-        self.epics.connect()
+        """
+        Responsible for the steps required for processing live data. This includes creating 
+        and connecting to the PyDM channel, and showing the proper UI widgets. 
+        """
+        if (self.macro_dict is not None) and ("DEVICE" in self.macro_dict):
+            # TODO: Other file uses macros["DEVICE"]+":RAW:ArrayData"
+            self.epics = PyDMChannel(address="ca://" +
+                                self.macro_dict["DEVICE"] + ":ARR1:ArrayData",
+                                value_slot=self.live_data, connection_slot=self.connect_data_settings)
+            self.epics.connect()
         self.show_exposure()
-        self.connectStatusLabel.setText("Connected")
         return 
 
+    def connect_data_settings(self):
+        """
+        Displays in the UI that a current connection is active
+        """
+        self.connectStatusLabel.setText("Connected")
+        self.display_state = "DATA"
+        self.openFilename.setText("None")
+        return
+
     def disconnect_data(self):
+        """
+        Responsible for severing the connection to live data and updating the UI
+        """
         # TODO: self.epics breaks when there's no connection :(
         if self.epics:
-            self.epics.disconnect()
             self.connectStatusLabel.setText("Disconnected")
+        self.display_state = "FILE"
         return
 
     def live_data(self, new_waveform):
