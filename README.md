@@ -4,9 +4,10 @@ SSRL pyMCA viewer
 
 Running
 -----
-From outside the scripts folder, run a script from the scripts folder
+You can run the tool with the following: `pydm -m DEVICE=XPRESS_DEMO SSRL_MCA.py`
+Be sure to change the name of the device to the proper device name. 
 
-To run the standard viewer:
+Alternatively, you can run with various files in the scripts folder such as:
 ```
 ./scripts/run_me.sh
 ```
@@ -14,21 +15,20 @@ To run the standard viewer:
 Different `.sh` files run different versions of the UI, which could involve different fitting protocols, etc.  
 You may have to `chmod +x *.sh` the files in the scripts folder to modify permissions. 
 
-
 Note: you may run the tool in a debugging mode using the DEBUG flag via the command line. For example:
 `pydm --log_level DEBUG SSRL_MCA.py`
+or
+`pydm -m DEVICE=XPRESS_DEMO --log_level DEBUG SSRL_MCA.py`
+These debug commands could be added to the running scripts.
 
 Usage
 -----
-The tool had two operational modes: live and static data processing. These different modes can be selected within
-the tool on the panel on the right side of the UI. The two tabs can be swapped to change the type of data being 
-processed. 
+The tool has two operational modes: live and static data processing. These different modes can be selected within the tool on the tab-based 
+panel on the right side of the UI. The two tabs can be swapped to change the type of data being processed. 
 
-On the live data panel, there are options to start and stop displaying data, and to set the exposure level. There
-is also a display for the exposure count and 
+On the live data panel, there are options to start and stop displaying data, and the exposure level and count.
 
-If the user attempts to switch to a static file while live data is being received, a confirmation 
-window will pop up to ensure that the user wishes to close the connection. If the user confirms the switch, but later
+If the user attempts to switch to a static file while live data is being received, a confirmation window will pop up to ensure that the user wishes to close the connection. If the user confirms the switch, but later
 chooses to switch back to live data, a connection will attempt to be recreated with the previous data channel. 
 
 Static Data Files
@@ -43,11 +43,9 @@ Demo IOC
 This demo IOC uses pcaspy to simulate an EPICS IOC.
 
 Open a terminal and start the IOC with the following command:
-
 `python demo/testing-ioc`
 
 In another terminal, run the following command to start the tool itself:
-
 `pydm -m DEVICE=XPRESS_DEMO SSRL_MCA.py`
 
 Debugging 

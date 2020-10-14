@@ -136,6 +136,7 @@ class MCADisplay(Display):
         # Debug Logger
         self.logger = logging.getLogger('mca_logger')
         self.separator = "\n" + ("-" * 20) + "\n"
+        self.epics = ''
         
         self.macro_dict = macros
         self.display_state = 'FILE'
@@ -164,7 +165,6 @@ class MCADisplay(Display):
             self.waveform.addChannel(
                 None, None, name=name, color=color, lineWidth=2)
 
-        # TODO: Is 18 just double the number of ROI's?
         for wave in range(18):
             name = f"Line{wave+1:02d}"
             self.waveform.addChannel(
@@ -339,7 +339,6 @@ class MCADisplay(Display):
         and connecting to the PyDM channel, and showing the proper UI widgets. 
         """
         if (self.macro_dict is not None) and ("DEVICE" in self.macro_dict):
-            # TODO: Other file uses macros["DEVICE"]+":RAW:ArrayData"
             self.epics = PyDMChannel(address="ca://" +
                                 self.macro_dict["DEVICE"] + ":ARR1:ArrayData",
                                 value_slot=self.live_data, connection_slot=self.connect_data_settings)
@@ -360,7 +359,6 @@ class MCADisplay(Display):
         """
         Responsible for severing the connection to live data and updating the UI
         """
-        # TODO: self.epics breaks when there's no connection :(
         if self.epics:
             self.epics.disconnect()
             self.connectStatusLabel.setText("Disconnected")
@@ -637,7 +635,7 @@ class MCADisplay(Display):
         return ret_i + sorted(ret_l, key=itemgetter(0))
 
     def handle_mca(self):
-        #Checks open tab widget to determine what data source is being used
+        # Check for live data connection
         if (self.display_state == "DATA"):
             items = self.record
         # File connection
